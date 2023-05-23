@@ -1,0 +1,136 @@
+collections:
+  The Criterion Collection:
+    collection_order: custom
+    plex_search:
+      all:
+        edition.is: Criterion Collection
+      sort_by: year.asc
+    sync_mode: sync
+  New Taiwanese Cinema:
+    letterboxd_list_details: https://letterboxd.com/shaswataray08/list/new-taiwanese-cinema-1982-2010-watchlist/
+    collection_order: custom
+    sync_mode: append
+  Studio Ghibli:
+    letterboxd_list_details: https://letterboxd.com/jaywill/list/ghibli/
+    collection_order: custom
+    sync_mode: sync
+  Academy Awards Best Picture Winners:
+    letterboxd_list_details: https://letterboxd.com/nayanc/list/academy-awards-oscars-best-picture-winners/
+    collection_order: custom
+    sync_mode: sync
+  Asian American ’80s:
+    letterboxd_list_details: https://letterboxd.com/criterion/list/asian-american-80s-criterion-channel/
+    collection_order: custom
+    sync_mode: sync
+  Palm d’Or Winners:
+    letterboxd_list_details: https://letterboxd.com/genadijus/list/palm-dor-winners-1939-2022/
+    collection_order: custom
+    sync_mode: sync
+  Pixar Studios:
+    letterboxd_list_details: https://letterboxd.com/analuisa895/list/pixar/
+    collection_order: custom
+    sync_mode: sync
+  Marvel Cinematic Universe:
+    letterboxd_list_details: https://letterboxd.com/brunamofu/list/marvel/
+    collection_order: custom
+    sync_mode: sync
+  Golden Age of Japanese Cinema:
+    letterboxd_list_details: https://letterboxd.com/evilbjork/list/golden-age-japanese-cinema/
+    collection_order: custom
+    sync_mode: sync
+  Hong Kong New Wave:
+    letterboxd_list_details: https://letterboxd.com/jww342/list/hong-kong-new-wave/
+    collection_order: custom
+    sync_mode: sync
+  Hong Kong Second New Wave:
+    letterboxd_list_details: https://letterboxd.com/jww342/list/hong-kong-second-wave/
+    collection_order: custom
+    sync_mode: sync
+  "Indian New Age (Parallel Cinema)":
+    letterboxd_list_details: https://letterboxd.com/abhijeet99/list/indian-new-wave-parallel-cinema-1950-2000/
+    collection_order: custom
+    sync_mode: sync
+  Iranian New Wave:
+    letterboxd_list_details: https://letterboxd.com/angayarkanni/list/iranian-new-waves/
+    collection_order: custom
+    sync_mode: sync
+  Spaghetti Westerns:
+    letterboxd_list_details: https://letterboxd.com/screeningnotes/list/spaghetti-western/
+    collection_order: custom
+    sync_mode: sync
+  Hong Kong Action Cinema:
+    letterboxd_list_details: https://letterboxd.com/elliem_m/list/hong-kong-action-cinema/
+    collection_order: custom
+    sync_mode: sync
+  Star Wars:
+    letterboxd_list_details: https://letterboxd.com/davidlsims/list/star-wars/
+    collection_order: custom
+    sync_mode: sync
+  Heist Movies:
+    letterboxd_list: https://letterboxd.com/markg/list/heist-movies/
+    collection_order: custom
+    sync_mode: sync
+  Anime Essentials:
+    letterboxd_list: https://letterboxd.com/selaserviette/list/anime/
+    collection_order: custom
+    sync_mode: sync
+  Walt Disney Animations:
+    letterboxd_list_details: https://letterboxd.com/strauss/list/walt-disney-animation-studios/
+    collection_order: custom
+    sync_mode: sync
+  Classic Halloween Movies:
+    letterboxd_list_details: https://letterboxd.com/horrorville/list/35-classic-halloween-movies-to-watch-for/
+    collection_order: custom
+    sync_mode: sync
+  90s Golden Age Rom-Coms:
+    letterboxd_list_details: https://letterboxd.com/karmanoodle/list/90s-rom-coms/
+    collection_order: custom
+    sync_mode: sync
+  Mumblecore:
+    letterboxd_list_details: https://letterboxd.com/missglumcakes/list/mumblecore/
+    collection_order: custom
+    sync_mode: sync
+  Sight & Sound Top 100:
+    letterboxd_list_details: https://letterboxd.com/mccharizard5043/list/sight-and-sound-top-100/
+    collection_order: custom
+    sync_mode: sync
+  New Queer Cinema:
+    letterboxd_list_details: https://letterboxd.com/realrockhudson/list/new-queer-cinema-the-directors-cut/
+    collection_order: custom
+    sync_mode: sync
+  The Movie Brats:
+    letterboxd_list_details: https://letterboxd.com/bojan1/list/the-movie-brats-in-new-hollywood-1971-1982/
+    collection_order: custom
+    sync_mode: sync
+  Afrofuturism:
+    letterboxd_list_details: https://letterboxd.com/peterh20/list/afrofuturism/
+    collection_order: custom
+    sync_mode: append
+  Classical Hollywood:
+    letterboxd_list_details: https://letterboxd.com/sn33d/list/classical-hollywood/
+    collection_order: custom
+    sync_mode: sync
+  "New Hollywood: American New Wave":
+    letterboxd_list_details: https://letterboxd.com/redwell/list/the-new-hollywood-timeline/
+    collection_order: custom
+    sync_mode: sync
+  American Action Movies:
+    letterboxd_list_details: https://letterboxd.com/jephdo/list/american-action-movies/
+    collection_order: custom
+    sync_mode: sync
+  Spy Thrillers:
+    letterboxd_list_details: https://letterboxd.com/phnz/list/for-film-students-best-spy-thrillers/
+    collection_order: custom
+    sync_mode: sync
+
+  
+
+
+    
+  
+
+
+
+    
+  
+  
