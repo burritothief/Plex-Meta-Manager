@@ -126,6 +126,10 @@ collections:
     letterboxd_list_details: https://letterboxd.com/michaelhutchins/list/the-world-cinema-project/
       collection_order: custom
       sync_mode: sync
+  "Rotten Tomatoes: 140 Favorite ’80s Movies":
+      letterboxd_list_details: https://letterboxd.com/michaelleahy/list/rotten-tomatoes-140-essential-80s-movies/
+      collection_order: custom
+      sync_mode: sync
 
   
 
