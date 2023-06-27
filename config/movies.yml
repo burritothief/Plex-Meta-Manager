@@ -134,6 +134,10 @@ collections:
     letterboxd_list_details: https://letterboxd.com/chiniana/list/chinese-cinema-the-fifth-generation/
     collection_order: custom
     sync_mode: sync
+  "BFI Flare: The 30 Best LGBTQ+ Films of All Time":
+    letterboxd_list_details: https://letterboxd.com/salmanlam/list/bfi-flare-the-30-best-lgbtq-films-of-all/
+    collection_order: custom
+    sync_mode: sync
   
 
 
