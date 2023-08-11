@@ -138,14 +138,8 @@ collections:
     letterboxd_list_details: https://letterboxd.com/salmanlam/list/bfi-flare-the-30-best-lgbtq-films-of-all/
     collection_order: custom
     sync_mode: sync
-  
+  French New Wave:
+    letterboxd_list_details: https://letterboxd.com/affectionate/list/french-new-wave/
+    collection_order: release
+    sync_mode: sync
 
-
-    
-  
-
-
-
-    
-  
-  
