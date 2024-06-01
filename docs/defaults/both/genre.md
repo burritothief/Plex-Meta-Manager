@@ -12,10 +12,10 @@ Supported Library Types: Movie, Show
 
 ## Collections Section 060
 
-| Collection                                               | Key                              | Description                                                                    |
-|:---------------------------------------------------------|:---------------------------------|:-------------------------------------------------------------------------------|
-| `Genre Collections`                                      | `separator`                      | [Separator Collection](../separators.md) to denote the Section of Collections. |
-| `<<Genre>> Movies/Shows`<br>**Example:** `Action Movies` | `<<Number>>`<br>**Example:** `5` | Collection of Movies/Shows that have this Genre.                               |
+| Collection                                               | Key                                  | Description                                                                    |
+|:---------------------------------------------------------|:-------------------------------------|:-------------------------------------------------------------------------------|
+| `Genre Collections`                                      | `separator`                          | [Separator Collection](../separators.md) to denote the Section of Collections. |
+| `<<Genre>> Movies/Shows`<br>**Example:** `Action Movies` | `<<Genre>>`<br>**Example:** `Action` | Collection of Movies/Shows that have this Genre.                               |
 
 ## Config
 
@@ -25,10 +25,10 @@ The below YAML in your config.yml will create the collections:
 libraries:
   Movies:
     collection_files:
-      - pmm: genre
+      - default: genre
   TV Shows:
     collection_files:
-      - pmm: genre
+      - default: genre
 ```
 
 ## Template Variables
@@ -41,9 +41,9 @@ work. Any value not specified will use its default value if it has one if not it
 
 ??? abstract "Variable Lists (click to expand)"
 
-    * **File-Specific Template Variables** are variables available specifically for this PMM Defaults file.
+    * **File-Specific Template Variables** are variables available specifically for this Kometa Defaults file.
 
-    * **Shared Template Variables** are additional variables shared across the PMM Defaults.
+    * **Shared Template Variables** are additional variables shared across the Kometa Defaults.
 
     * **Shared Separator Variables** are additional variables available since this Default contains a 
     [Separator](../separators.md).
@@ -88,7 +88,7 @@ work. Any value not specified will use its default value if it has one if not it
     libraries:
       Movies:
         collection_files:
-          - pmm: genre
+          - default: genre
             template_variables:
               sep_style: red #(1)!
               exclude:

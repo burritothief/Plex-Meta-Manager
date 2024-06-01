@@ -77,6 +77,7 @@ Supported library types: Movie & Show
 | Tamil                    | `ta`  | `30`   | `in`         |  :fontawesome-solid-circle-xmark:{ .red }  |
 | Urdu                     | `ur`  | `20`   | `pk`         |  :fontawesome-solid-circle-xmark:{ .red }  |
 | Vietnamese               | `vi`  | `15`   | `vn`         |  :fontawesome-solid-circle-xmark:{ .red }  |
+| Bambara                  | `bm`  | `12`   | `ml`         |  :fontawesome-solid-circle-xmark:{ .red }  |
 | Lingala                  | `ln`  | `11`   | `cd`         |  :fontawesome-solid-circle-xmark:{ .red }  |
 | Wolof                    | `wo`  | `10`   | `sn`         |  :fontawesome-solid-circle-xmark:{ .red }  |
 | Mayan                    | `myn` | `8`    | `mx`         |  :fontawesome-solid-circle-xmark:{ .red }  |
@@ -108,14 +109,14 @@ The below YAML in your config.yml will create the overlays:
 libraries:
   Movies:
     overlay_files:
-      - pmm: languages
+      - default: languages
   TV Shows:
     overlay_files:
-      - pmm: languages
-      - pmm: languages
+      - default: languages
+      - default: languages
         template_variables:
           builder_level: season
-      - pmm: languages
+      - default: languages
         template_variables:
           builder_level: episode
 ```
@@ -130,11 +131,11 @@ work. Any value not specified will use its default value if it has one if not it
 
 ??? abstract "Variable Lists (click to expand)"
 
-    * **File-Specific Template Variables** are variables available specifically for this PMM Defaults file.
+    * **File-Specific Template Variables** are variables available specifically for this Kometa Defaults file.
 
-    * **Overlay Template Variables** are additional variables shared across the PMM Overlay Defaults.
+    * **Overlay Template Variables** are additional variables shared across the Kometa Overlay Defaults.
 
-    * **Overlay Text Template Variables** are additional variables shared across the PMM Text Overlay Defaults.
+    * **Overlay Text Template Variables** are additional variables shared across the Kometa Text Overlay Defaults.
 
     ??? example "Default Template Variable Values (click to expand)"
 
@@ -194,7 +195,7 @@ work. Any value not specified will use its default value if it has one if not it
     libraries:
       Movies:
         overlay_files:
-          - pmm: languages
+          - default: languages
             template_variables:
               languages:
                 - en

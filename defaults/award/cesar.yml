@@ -2,11 +2,11 @@
 #                         Cesar Awards Collections                           #
 #                 Created by Yozora, Bullmoose20, & Sohjiro                  #
 #          EDITING THIS FILE MAY CAUSE PULLING NEW UPDATES TO FAIL           #
-#          https://metamanager.wiki/en/latest/defaults/award/cesar           #
+#             https://kometa.wiki/en/latest/defaults/award/cesar             #
 ##############################################################################
 
 external_templates:
-  pmm: templates
+  default: templates
   template_variables:
     collection_section: 130
 
@@ -16,7 +16,7 @@ collections:
       key: best
     template:
       - name: shared
-        sort: Cesar !
+        sort: César !
         allowed_libraries: movie
         image: award/cesar/winner
         translation_key: cesar_best
@@ -35,7 +35,7 @@ dynamic_collections:
     sync: true
     data:
       event_id: ev0000157
-      starting: latest-5
+      starting: latest-4
       ending: latest
     title_format: Cesar <<key_name>>
     template:

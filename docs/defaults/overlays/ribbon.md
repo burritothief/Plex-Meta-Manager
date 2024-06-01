@@ -13,20 +13,21 @@ Supported Overlay Level: Movie, Show
 
 | Ribbon                          | Key               | Weight |
 |:--------------------------------|:------------------|:-------|
-| Oscars Best Picture             | `oscars`          | `180`  |
-| Oscars Best Director            | `oscars_director` | `170`  |
-| Golden Globe Winner             | `golden`          | `160`  |
-| Golden Globe Director           | `golden_director` | `150`  |
-| BAFTA Winner                    | `bafta`           | `140`  |
-| Cannes Winner                   | `cannes`          | `130`  |
-| Berlinale Winner                | `berlinale`       | `120`  |
-| Venice Winner                   | `venice`          | `110`  |
-| Sundance Winner                 | `sundance`        | `100`  |
-| Emmys Winner                    | `emmys`           | `90`   |
-| Critic's Choice Winner          | `choice`          | `80`   |
-| Independent Spirit Award Winner | `spirit`          | `70`   |
-| César Winner                    | `cesar`           | `60`   |
-| IMDb Top 250                    | `imdb`            | `50`   |
+| Oscars Best Picture             | `oscars`          | `190`  |
+| Oscars Best Director            | `oscars_director` | `180`  |
+| Golden Globe Winner             | `golden`          | `170`  |
+| Golden Globe Director           | `golden_director` | `160`  |
+| BAFTA Winner                    | `bafta`           | `150`  |
+| Cannes Winner                   | `cannes`          | `140`  |
+| Berlinale Winner                | `berlinale`       | `130`  |
+| Venice Winner                   | `venice`          | `120`  |
+| Sundance Winner                 | `sundance`        | `110`  |
+| Emmys Winner                    | `emmys`           | `100`  |
+| Critic's Choice Winner          | `choice`          | `90`   |
+| Independent Spirit Award Winner | `spirit`          | `80`   |
+| César Winner                    | `cesar`           | `70`   |
+| IMDb Top 250                    | `imdb`            | `60`   |
+| Letterboxd Top 250              | `letterboxd`      | `50`   |
 | Rotten Tomatoes Certified Fresh | `rotten`          | `40`   |
 | Metacritic Must See             | `metacritic`      | `30`   |
 | Common Sense Selection          | `common`          | `20`   |
@@ -40,10 +41,10 @@ The below YAML in your config.yml will create the overlays:
 libraries:
   Movies:
     overlay_files:
-      - pmm: ribbon
+      - default: ribbon
   TV Shows:
     overlay_files:
-      - pmm: ribbon
+      - default: ribbon
 ```
 
 ## Template Variables
@@ -56,9 +57,9 @@ work. Any value not specified will use its default value if it has one if not it
 
 ??? abstract "Variable Lists (click to expand)"
 
-    * **File-Specific Template Variables** are variables available specifically for this PMM Defaults file.
+    * **File-Specific Template Variables** are variables available specifically for this Kometa Defaults file.
 
-    * **Overlay Template Variables** are additional variables shared across the PMM Overlay Defaults.
+    * **Overlay Template Variables** are additional variables shared across the Kometa Overlay Defaults.
 
     ??? example "Default Template Variable Values (click to expand)"
 
@@ -94,7 +95,7 @@ work. Any value not specified will use its default value if it has one if not it
     libraries:
       Movies:
         overlay_files:
-          - pmm: ribbon
+          - default: ribbon
             template_variables:
               style: black
               weight_metacritic: 35

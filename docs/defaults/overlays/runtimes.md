@@ -17,11 +17,11 @@ The below YAML in your config.yml will create the overlays:
 libraries:
   Movies:
     overlay_files:
-      - pmm: runtimes
+      - default: runtimes
   TV Shows:
     overlay_files:
-      - pmm: runtimes
-      - pmm: runtimes
+      - default: runtimes
+      - default: runtimes
         template_variables:
           builder_level: episode
 ```
@@ -36,11 +36,11 @@ work. Any value not specified will use its default value if it has one if not it
 
 ??? abstract "Variable Lists (click to expand)"
 
-    * **File-Specific Template Variables** are variables available specifically for this PMM Defaults file.
+    * **File-Specific Template Variables** are variables available specifically for this Kometa Defaults file.
 
-    * **Overlay Template Variables** are additional variables shared across the PMM Overlay Defaults.
+    * **Overlay Template Variables** are additional variables shared across the Kometa Overlay Defaults.
 
-    * **Overlay Text Template Variables** are additional variables shared across the PMM Text Overlay Defaults.
+    * **Overlay Text Template Variables** are additional variables shared across the Kometa Text Overlay Defaults.
 
     ??? example "Default Template Variable Values (click to expand)"
 
@@ -57,9 +57,10 @@ work. Any value not specified will use its default value if it has one if not it
         
     === "File-Specific Template Variables"
 
-        | Variable  | Description & Values                                                                                                                     |
-        |:----------|:-----------------------------------------------------------------------------------------------------------------------------------------|
-        | `text`    | **Description:** Choose the text that appears prior to the runtime on the Overlay.<br>**Default:** `Runtime: `<br>**Values:** Any String |
+        | Variable | Description & Values                                                                                                                     |
+        |:---------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+        | `text`   | **Description:** Choose the text that appears prior to the runtime on the Overlay.<br>**Default:** `Runtime: `<br>**Values:** Any String |
+        | `format` | **Description:** Choose the format of the the displayed runtime.<br>**Default:** `<<runtimeH>>h <<runtimeM>>m`<br>**Values:** Any String |
 
     === "Overlay Template Variables"
 
@@ -81,7 +82,7 @@ work. Any value not specified will use its default value if it has one if not it
     libraries:
       TV Shows:
         overlay_files:
-          - pmm: runtimes
+          - default: runtimes
             template_variables:
               builder_level: episode
             font: fonts/Inter-Bold.ttf

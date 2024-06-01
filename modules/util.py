@@ -1,4 +1,4 @@
-import glob, os, re, requests, ruamel.yaml, signal, sys, time
+import glob, os, re, signal, sys, time
 from datetime import datetime, timedelta
 from modules.logs import MyLogger
 from num2words import num2words
@@ -43,19 +43,6 @@ class NotScheduled(Exception):
 class NotScheduledRange(NotScheduled):
     pass
 
-class ImageData:
-    def __init__(self, attribute, location, prefix="", is_poster=True, is_url=True, compare=None):
-        self.attribute = attribute
-        self.location = location
-        self.prefix = prefix
-        self.is_poster = is_poster
-        self.is_url = is_url
-        self.compare = compare if compare else location if is_url else os.stat(location).st_size
-        self.message = f"{prefix}{'poster' if is_poster else 'background'} to [{'URL' if is_url else 'File'}] {location}"
-
-    def __str__(self):
-        return str(self.__dict__)
-
 def retry_if_not_failed(exception):
     return not isinstance(exception, Failed)
 
@@ -76,14 +63,17 @@ mod_displays = {
     ".gt": "is greater than", ".gte": "is greater than or equal", ".lt": "is less than", ".lte": "is less than or equal", ".regex": "is"
 }
 pretty_days = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
+lower_days = {v.lower(): k for k, v in pretty_days.items()}
 pretty_months = {
     1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
     7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December"
 }
+lower_months = {v.lower(): k for k, v in pretty_months.items()}
 seasons = ["current", "winter", "spring", "summer", "fall"]
 advance_tags_to_edit = {
-    "Movie": ["metadata_language", "use_original_title"],
-    "Show": ["episode_sorting", "keep_episodes", "delete_episodes", "season_display", "episode_ordering", "metadata_language", "use_original_title"],
+    "Movie": ["metadata_language", "use_original_title", "credits_detection"],
+    "Show": ["episode_sorting", "keep_episodes", "delete_episodes", "season_display", "episode_ordering", "metadata_language", "use_original_title", "credits_detection", "audio_language", "subtitle_language", "subtitle_mode"],
+    "Season": ["audio_language", "subtitle_language", "subtitle_mode"],
     "Artist": ["album_sorting"]
 }
 tags_to_edit = {
@@ -105,88 +95,6 @@ parental_labels = [f"{t.capitalize()}:{v}" for t in parental_types for v in pare
 previous_time = None
 start_time = None
 
-def guess_branch(version, env_version, git_branch):
-    if git_branch:
-        return git_branch
-    elif env_version in ["nightly", "develop"]:
-        return env_version
-    elif version[2] > 0:
-        dev_version = get_develop()
-        if version[1] != dev_version[1] or version[2] <= dev_version[2]:
-            return "develop"
-        else:
-            return "nightly"
-    else:
-        return "master"
-
-def current_version(version, branch=None, nightly=False):
-    if nightly or branch == "nightly":
-        return get_nightly()
-    elif branch == "develop":
-        return get_develop()
-    elif version[2] > 0:
-        new_version = get_develop()
-        if version[1] != new_version[1] or new_version[2] >= version[2]:
-            return new_version
-        return get_nightly()
-    else:
-        return get_master()
-
-nightly_version = None
-def get_nightly():
-    global nightly_version
-    if nightly_version is None:
-        nightly_version = get_version("nightly")
-    return nightly_version
-
-develop_version = None
-def get_develop():
-    global develop_version
-    if develop_version is None:
-        develop_version = get_version("develop")
-    return develop_version
-
-master_version = None
-def get_master():
-    global master_version
-    if master_version is None:
-        master_version = get_version("master")
-    return master_version
-
-def get_version(level):
-    try:
-        url = f"https://raw.githubusercontent.com/meisnate12/Plex-Meta-Manager/{level}/VERSION"
-        return parse_version(requests.get(url).content.decode().strip(), text=level)
-    except requests.exceptions.ConnectionError:
-        return "Unknown", "Unknown", 0
-
-def parse_version(version, text="develop"):
-    version = version.replace("develop", text)
-    split_version = version.split(f"-{text}")
-    return version, split_version[0], int(split_version[1]) if len(split_version) > 1 else 0
-
-def quote(data):
-    return requests.utils.quote(str(data))
-
-def download_image(title, image_url, download_directory, filename=None):
-    response = requests.get(image_url, headers=header())
-    if response.status_code == 404:
-        raise Failed(f"Image Error: Not Found on Image URL: {image_url}")
-    if response.status_code >= 400:
-        raise Failed(f"Image Error: {response.status_code} on Image URL: {image_url}")
-    if "Content-Type" not in response.headers or response.headers["Content-Type"] not in image_content_types:
-        raise Failed("Image Not PNG, JPG, or WEBP")
-    new_image = os.path.join(download_directory, f"{filename}") if filename else download_directory
-    if response.headers["Content-Type"] == "image/jpeg":
-        new_image += ".jpg"
-    elif response.headers["Content-Type"] == "image/webp":
-        new_image += ".webp"
-    else:
-        new_image += ".png"
-    with open(new_image, "wb") as handler:
-        handler.write(response.content)
-    return ImageData("asset_directory", new_image, prefix=f"{title}'s ", is_url=False)
-
 def get_image_dicts(group, alias):
     posters = {}
     backgrounds = {}
@@ -201,34 +109,6 @@ def get_image_dicts(group, alias):
             else:
                 logger.error(f"Metadata Error: {attr} attribute is blank")
     return posters, backgrounds
-
-def pick_image(title, images, prioritize_assets, download_url_assets, item_dir, is_poster=True, image_name=None):
-    image_type = "poster" if is_poster else "background"
-    if image_name is None:
-        image_name = image_type
-    if images:
-        logger.debug(f"{len(images)} {image_type}{'s' if len(images) > 1 else ''} found:")
-        for i in images:
-            logger.debug(f"Method: {i} {image_type.capitalize()}: {images[i]}")
-        if prioritize_assets and "asset_directory" in images:
-            return images["asset_directory"]
-        for attr in ["style_data", f"url_{image_type}", f"file_{image_type}", f"tmdb_{image_type}", "tmdb_profile",
-                     "tmdb_list_poster", "tvdb_list_poster", f"tvdb_{image_type}", "asset_directory", f"pmm_{image_type}",
-                     "tmdb_person", "tmdb_collection_details", "tmdb_actor_details", "tmdb_crew_details", "tmdb_director_details",
-                     "tmdb_producer_details", "tmdb_writer_details", "tmdb_movie_details", "tmdb_list_details",
-                     "tvdb_list_details", "tvdb_movie_details", "tvdb_show_details", "tmdb_show_details"]:
-            if attr in images:
-                if attr in ["style_data", f"url_{image_type}"] and download_url_assets and item_dir:
-                    if "asset_directory" in images:
-                        return images["asset_directory"]
-                    else:
-                        try:
-                            return download_image(title, images[attr], item_dir, image_name)
-                        except Failed as e:
-                            logger.error(e)
-                if attr in ["asset_directory", f"pmm_{image_type}"]:
-                    return images[attr]
-                return ImageData(attr, images[attr], is_poster=is_poster, is_url=attr != f"file_{image_type}")
 
 def add_dict_list(keys, value, dict_map):
     for key in keys:
@@ -422,13 +302,13 @@ def load_files(files_to_load, method, err_type="Config", schedule=None, lib_vars
         if isinstance(file, dict):
             current = []
             def check_dict(attr, name):
-                if attr in file and (method != "metadata_files" or attr != "pmm"):
+                if attr in file and (method != "metadata_files" or attr not in ["pmm", "default"]):
                     logger.info(f"Reading {attr}: {file[attr]}")
                     if file[attr]:
-                        if attr == "pmm" and file[attr] == "other_award":
-                            logger.error(f"{err_type} Error: The PMM Default other_award has been deprecated. Please visit the wiki for the full list of available award files")
+                        if attr in ["pmm", "default"] and file[attr] == "other_award":
+                            logger.error(f"{err_type} Error: The Kometa Default other_award has been deprecated. Please visit the wiki for the full list of available award files")
                         elif attr == "git" and file[attr].startswith("PMM/"):
-                            current.append(("PMM Default", file[attr][4:]))
+                            current.append(("Default", file[attr][4:]))
                         else:
                             current.append((name, file[attr]))
                     else:
@@ -437,7 +317,8 @@ def load_files(files_to_load, method, err_type="Config", schedule=None, lib_vars
 
             check_dict("url", "URL")
             check_dict("git", "Git")
-            check_dict("pmm", "PMM Default")
+            check_dict("pmm", "Default")
+            check_dict("default", "Default")
             check_dict("repo", "Repo")
             check_dict("file", "File")
             if not single and "folder" in file:
@@ -534,7 +415,7 @@ def is_date_filter(value, modifier, data, final, current_time):
         if (modifier == ".before" and value >= filter_date) or (modifier == ".after" and value <= filter_date):
             return True
     elif modifier == ".regex":
-        jailbreak = True
+        jailbreak = False
         for check_data in data:
             if re.compile(check_data).match(value.strftime("%m/%d/%Y")):
                 jailbreak = True
@@ -722,13 +603,16 @@ def schedule_check(attribute, data, current_time, run_hour, is_all=False):
             raise NotScheduled(schedule_str)
     return schedule_str
 
-def check_int(value, datatype="int", minimum=1, maximum=None):
+def check_int(value, datatype="int", minimum=1, maximum=None, throw=False):
     try:
         value = int(str(value)) if datatype == "int" else float(str(value))
         if (maximum is None and minimum <= value) or (maximum is not None and minimum <= value <= maximum):
             return value
     except ValueError:
-        pass
+        if throw:
+            message = f"{value} must be {'an integer' if datatype == 'int' else 'a number'}"
+            raise Failed(f"{message} {minimum} or greater" if maximum is None else f"{message} between {minimum} and {maximum}")
+        return None
 
 def parse_and_or(error, attribute, data, test_list):
     out = ""
@@ -782,12 +666,12 @@ def parse(error, attribute, data, datatype=None, methods=None, parent=None, defa
                     if options is None or (options and (v in options or (datatype == "strlist" and str(v) in options))):
                         final_list.append(str(v) if datatype == "strlist" else v)
                     elif options:
-                        raise Failed(f"{error} Error: {display} {v} is invalid; Options include: {', '.join(options)}")
+                        raise Failed(f"{error} Error: {display} {v} is invalid; Options include: {', '.join([o for o in options])}")
         return final_list
     elif datatype == "intlist":
         if value:
             try:
-                return [int(v) for v in value if v] if isinstance(value, list) else [int(value)]
+                return [int(v) for v in value if v] if isinstance(value, list) else get_list(value, int_list=True)
             except ValueError:
                 pass
         return []
@@ -847,8 +731,8 @@ def parse(error, attribute, data, datatype=None, methods=None, parent=None, defa
         if range_split:
             range_values = str(value).split(range_split)
             if len(range_values) == 2:
-                start = check_int(range_values[0])
-                end = check_int(range_values[1])
+                start = check_int(range_values[0], datatype=datatype, minimum=minimum, maximum=maximum)
+                end = check_int(range_values[1], datatype=datatype, minimum=minimum, maximum=maximum)
                 if start and end and start < end:
                     return f"{start}{range_split}{end}"
         else:
@@ -861,7 +745,9 @@ def parse(error, attribute, data, datatype=None, methods=None, parent=None, defa
             message = f"{message} separated by a {range_split}"
     elif datatype == "date":
         try:
-            return validate_date(datetime.now() if data == "today" else data, return_as=date_return)
+            if default in ["today", "current"]:
+                default = validate_date(datetime.now(), return_as=date_return)
+            return validate_date(datetime.now() if data in ["today", "current"] else data, return_as=date_return)
         except Failed as e:
             message = f"{e}"
     elif (translation is not None and str(value).lower() not in translation) or \
@@ -1003,36 +889,3 @@ def get_system_fonts():
             return dirs
         system_fonts = [n for d in dirs for _, _, ns in os.walk(d) for n in ns]
     return system_fonts
-
-class YAML:
-    def __init__(self, path=None, input_data=None, check_empty=False, create=False, start_empty=False):
-        self.path = path
-        self.input_data = input_data
-        self.yaml = ruamel.yaml.YAML()
-        self.yaml.width = 100000
-        self.yaml.indent(mapping=2, sequence=2)
-        try:
-            if input_data:
-                self.data = self.yaml.load(input_data)
-            else:
-                if start_empty or (create and not os.path.exists(self.path)):
-                    with open(self.path, 'w'):
-                        pass
-                    self.data = {}
-                else:
-                    with open(self.path, encoding="utf-8") as fp:
-                        self.data = self.yaml.load(fp)
-        except ruamel.yaml.error.YAMLError as e:
-            e = str(e).replace("\n", "\n      ")
-            raise Failed(f"YAML Error: {e}")
-        except Exception as e:
-            raise Failed(f"YAML Error: {e}")
-        if not self.data or not isinstance(self.data, dict):
-            if check_empty:
-                raise Failed("YAML Error: File is empty")
-            self.data = {}
-
-    def save(self):
-        if self.path:
-            with open(self.path, 'w', encoding="utf-8") as fp:
-                self.yaml.dump(self.data, fp)

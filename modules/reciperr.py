@@ -8,11 +8,11 @@ builders = ["reciperr_list", "stevenlu_popular"]
 stevenlu_url = "https://s3.amazonaws.com/popular-movies/movies.json"
 
 class Reciperr:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, requests):
+        self.requests = requests
 
     def _request(self, url, name="Reciperr"):
-        response = self.config.get(url)
+        response = self.requests.get(url)
         if response.status_code >= 400:
             raise Failed(f"{name} Error: JSON not found at {url}")
         return response.json()
@@ -29,7 +29,7 @@ class Reciperr:
         name = "StevenLu" if method == "stevenlu_popular" else "Reciperr"
         logger.info(f"Processing {name} Movies")
         if method == "reciperr_list":
-            ids = [(i["imdb_id"], "imdb") for i in self._request(data)]
+            ids = [(i["imdb_id"], "imdb") for i in self._request(data) if "imdb_id" in i]
         elif method == "stevenlu_popular":
             ids = [(i["imdb_id"], "imdb") for i in self._request(stevenlu_url, name="StevenLu")]
         else:

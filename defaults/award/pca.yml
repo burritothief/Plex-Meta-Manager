@@ -2,11 +2,11 @@
 #                    People's Choice Awards Collections                      #
 #                 Created by Yozora, Bullmoose20, & Sohjiro                  #
 #          EDITING THIS FILE MAY CAUSE PULLING NEW UPDATES TO FAIL           #
-#           https://metamanager.wiki/en/latest/defaults/award/pca            #
+#              https://kometa.wiki/en/latest/defaults/award/pca              #
 ##############################################################################
 
 external_templates:
-  pmm: templates
+  default: templates
   template_variables:
     collection_section: 130
 
@@ -42,7 +42,7 @@ dynamic_collections:
     sync: true
     data:
       event_id: ev0000530
-      starting: latest-5
+      starting: latest-4
       ending: latest
     title_format: People's Choice Awards <<key_name>>
     template:

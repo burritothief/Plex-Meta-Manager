@@ -1,15 +1,17 @@
-# Scheduling Parts of PMM
+# Scheduling Parts of Kometa
 
-Plex Meta Manager allows you to schedule libraries, files, overlays, operations, and more so that runs can be tailored 
+Kometa allows you to schedule libraries, files, overlays, operations, and more so that runs can be tailored 
 to suit your needs.
 
 This is particularly handy for users who have a lot of libraries or run a lot of Metadata/Operations on their libraries.
 
 ### IMPORTANT:
 
-These schedules do not trigger PMM to run; they control what PMM will do if it happens to be running at the scheduled 
-time. `weekly(sunday)`, for example, does not mean "run PMM on Sunday to do this thing"; it means "If PMM is running, 
+These schedules do not trigger Kometa to run; they control what Kometa will do if it happens to be running at the scheduled 
+time. `weekly(sunday)`, for example, does not mean "run Kometa on Sunday to do this thing"; it means "If Kometa is running, 
 and it's Sunday, do this thing".
+
+If you want to control when Kometa itself runs, like if you want Kometa to only run on Tuesdays and Thursdays, see [this page](../kometa/scheduling.md).
 
 The scheduling options are:
 
@@ -26,7 +28,7 @@ The scheduling options are:
 | All          | Requires that all comma separated scheduling options inside its brackets be meet in order to run                    | all[Options]                                       | `all[weekly(sunday), hourly(17)]`                                    |
 
 * `daily` is the default when `schedule` is not specified.
-* You can run the script multiple times per day but using the `--time` command line argument detailed on the [Run Commands & Environmental Variables Page](../pmm/environmental.md).
+* You can run Kometa multiple times per day but using the `--time` command line argument detailed on the [Run Commands & Environmental Variables Page](../kometa/environmental.md).
 * You can have multiple scheduling options as a list.
 * You can use the `delete_not_scheduled` setting to delete Collections that are skipped due to not being scheduled.
 
@@ -49,10 +51,10 @@ The scheduling options are:
             schedule: weekly(sunday)
             collection_files:
               - file: config/Movies.yml
-              - pmm: imdb
-              - pmm: studio
-              - pmm: genre
-              - pmm: actor
+              - default: imdb
+              - default: studio
+              - default: genre
+              - default: actor
             operations:
               mass_critic_rating_update: tmdb
         ```
@@ -75,13 +77,13 @@ The scheduling options are:
             collection_files:
               - file: config/Movies.yml
                 schedule: weekly(monday)
-              - pmm: imdb
+              - default: imdb
                 schedule: weekly(tuesday)
               - folder: config/Movies/
                 schedule: weekly(wednesday)
-              - pmm: genre
+              - default: genre
                 schedule: weekly(thursday)
-              - pmm: actor
+              - default: actor
                 schedule: weekly(friday)
             metadata_files:
               - file: config/metadata.yml
@@ -107,9 +109,9 @@ The scheduling options are:
           Movies:
             schedule_overlays: weekly(saturday)
             overlay_files:
-              - pmm: audio_codec
-              - pmm: resolution
-              - pmm: video_format
+              - default: audio_codec
+              - default: resolution
+              - default: video_format
         ```
 
 ??? blank "Scheduling Individual Collections<a class="headerlink" href="#schedule-collection" title="Permanent link">¶</a>"
@@ -120,7 +122,7 @@ The scheduling options are:
     ???+ example "Example"
 
         Below is an example of a collection which has been scheduled to run on a Sunday. In this scenario, if you run 
-        PMM on a Monday, this collection will be skipped but any other collections which do not have a scheduled defined 
+        Kometa on a Monday, this collection will be skipped but any other collections which do not have a scheduled defined 
         will be run.
         
         ```yaml
@@ -150,7 +152,7 @@ The scheduling options are:
         libraries:
           Movies:
             collection_files:
-              - pmm: imdb
+              - default: imdb
             operations:
               schedule: weekly(friday)
               mass_critic_rating_update: tmdb
@@ -163,7 +165,7 @@ The scheduling options are:
         libraries:
           Movies:
             collection_files:
-              - pmm: imdb
+              - default: imdb
             operations:
               - schedule: weekly(friday)
                 mass_critic_rating_update: tmdb
@@ -180,7 +182,7 @@ The scheduling options are:
     ???+ example "Example"
 
         In this example, the collection will be pinned to your home screen for the month of December and on January 1st
-        will no longer be pinned (you must run PMM on 1st January for the removal of the pin to happen)
+        will no longer be pinned (you must run Kometa on 1st January for the removal of the pin to happen)
         
         ```yaml
         collections:

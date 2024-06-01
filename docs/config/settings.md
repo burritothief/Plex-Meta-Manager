@@ -6,8 +6,7 @@ search:
 
 ## Overview
 
-The `settings:` attribute and subsequent settings can be used to command various aspects of the functionality of Plex 
-Meta Manager.
+The `settings:` attribute and subsequent settings can be used to command various aspects of the functionality of Kometa.
 
 Examples of these settings include the ability to:
 
@@ -27,10 +26,10 @@ Attributes set at the collection level will take priority over any library or gl
 
 The available setting attributes which can be set at each level are outlined below:
 
-??? blank "`cache` - Used to control PMM's cache database.<a class="headerlink" href="#cache" title="Permanent link">¶</a>"
+??? blank "`cache` - Used to control Kometa's cache database.<a class="headerlink" href="#cache" title="Permanent link">¶</a>"
 
-    <div id="cache" />Allow Plex Meta Manager to create and maintain a local cache database for faster subsequent 
-    processing. The cache file is created in the same directory as the configuration file.
+    <div id="cache" />Allow Kometa to create and maintain a local cache database for faster subsequent processing. The 
+    cache file is created in the same directory as the configuration file.
 
     <hr style="margin: 0px;">
     
@@ -76,8 +75,8 @@ The available setting attributes which can be set at each level are outlined bel
 
     ???+ tip 
     
-        Assets can be stored anywhere on the host system that PMM has visibility of (i.e. if using docker, the directory 
-        must be mounted/visible to the docker container).
+        Assets can be stored anywhere on the host system that Kometa has visibility of (i.e. if using docker, the 
+        directory must be mounted/visible to the docker container).
     
     <hr style="margin: 0px;">
     
@@ -105,7 +104,7 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`asset_folders` - Used to control the asset directory folder structure.<a class="headerlink" href="#asset-folders" title="Permanent link">¶</a>"
 
-    <div id="asset-folders" />While `true`, PMM will search the `asset_directory` for a dedicated folder per item vs 
+    <div id="asset-folders" />While `true`, Kometa will search the `asset_directory` for a dedicated folder per item vs 
     while false will look for an image. 
     
     i.e. When `true` the example path would be `<asset_directory_path>/Star Wars/poster.png` instead of 
@@ -132,7 +131,7 @@ The available setting attributes which can be set at each level are outlined bel
 
     <div id="asset-depth" />Specify how many folder levels to scan for an item within the asset directory.
     
-    At each asset level, PMM will look for either `medianame.ext` [such as Star Wars.png] or a dedicated folder 
+    At each asset level, Kometa will look for either `medianame.ext` [such as Star Wars.png] or a dedicated folder 
     containing `poster.ext`.
     
     i.e. `<path_to_assets>/Star Wars/poster.png` and `<path_to_assets>/Star Wars.png` are both asset depth 0, whilst 
@@ -381,7 +380,7 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`default_collection_order` - Used to set the `collection_order` for every collection run.<a class="headerlink" href="#default-collection-order" title="Permanent link">¶</a>"
 
-    <div id="default-collection-order" />Set the `collection_order` for every collection run by PMM unless the 
+    <div id="default-collection-order" />Set the `collection_order` for every collection run by Kometa unless the 
     collection has a specific `collection_order`.
     
     ???+ tip
@@ -410,7 +409,7 @@ The available setting attributes which can be set at each level are outlined bel
         
         ```yaml
         settings:
-          sync_mode: sync
+          default_collection_order: release
         ```
 
 ??? blank "`minimum_items` - Used to control minimum items requires to build a collection/playlist.<a class="headerlink" href="#minimum-items" title="Permanent link">¶</a>"
@@ -515,8 +514,9 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`missing_only_released` - Used to filter unreleased items from missing lists.<a class="headerlink" href="#missing-only-released" title="Permanent link">¶</a>"
 
-    <div id="missing-only-released" />Whilst running a collection or playlist, when PMM handles missing items to either 
-    report it to the user, report it to a file, or send it to Radarr/Sonarr all unreleased items will be filtered out.
+    <div id="missing-only-released" />Whilst running a collection or playlist, when Kometa handles missing items to 
+    either report it to the user, report it to a file, or send it to Radarr/Sonarr all unreleased items will be 
+    filtered out.
 
     <hr style="margin: 0px;">
     
@@ -535,9 +535,9 @@ The available setting attributes which can be set at each level are outlined bel
           missing_only_released: true
         ```
 
-??? blank "`show_unmanaged` - Used to show collections not managed by PMM.<a class="headerlink" href="#show-unmanaged" title="Permanent link">¶</a>"
+??? blank "`show_unmanaged` - Used to show collections not managed by Kometa.<a class="headerlink" href="#show-unmanaged" title="Permanent link">¶</a>"
 
-    <div id="show-unmanaged" />List all collections not managed by Plex Meta Manager at the end of each run.
+    <div id="show-unmanaged" />List all collections not managed by Kometa at the end of each run.
 
     <hr style="margin: 0px;">
     
@@ -558,8 +558,7 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`show_unconfigured` - Used to show collections not in the current run.<a class="headerlink" href="#show-unconfigured" title="Permanent link">¶</a>"
 
-    <div id="show-unconfigured" />List all collections not configured in the current Plex Meta Manager run at the end of 
-    each run.
+    <div id="show-unconfigured" />List all collections not configured in the current Kometa run at the end of each run.
 
     <hr style="margin: 0px;">
     
@@ -714,6 +713,27 @@ The available setting attributes which can be set at each level are outlined bel
           save_report: false
         ```
 
+??? blank "`report_path` - Used to specify the location of `save_report`.<a class="headerlink" href="#report-path" title="Permanent link">¶</a>"
+
+    <div id="report-path" />Specify the location where `save_report` is saved.
+
+    <hr style="margin: 0px;">
+    
+    **Attribute:** `report_path`
+
+    **Levels with this Attribute:** Library
+
+    **Accepted Values:** YAML file path location
+
+    **Default Value:** `[Directory containing YAML config]/[Library Mapping Name]_report.yml`
+
+    ???+ example "Example"
+        
+        ```yaml
+        settings:
+          report_path: config/TV_missing_report.yml
+        ```
+
 ??? blank "`tvdb_language` - Specify the language to query TVDb in.<a class="headerlink" href="#tvdb-language" title="Permanent link">¶</a>"
 
     <div id="tvdb-language" />Specify the language to query TVDb in.
@@ -791,8 +811,7 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`item_refresh_delay` - Time to wait between each `item_refresh`.<a class="headerlink" href="#item-refresh-delay" title="Permanent link">¶</a>"
 
-    <div id="item-refresh-delay" />Specify the amount of time to wait between each `item_refresh` of every movie/show in 
-    a collection/playlist.
+    <div id="item-refresh-delay" />Specify the number of seconds to wait between each `item_refresh` of every movie/show in a collection/playlist.
     
     ???+ note
     
@@ -804,7 +823,7 @@ The available setting attributes which can be set at each level are outlined bel
 
     **Levels with this Attribute:** Global/Library/Collection/Playlist
     
-    **Accepted Values:** Any Integer 0 or greater
+    **Accepted Values:** Any Integer 0 or greater (value is in seconds)
 
     **Default Value:** `0`
 
@@ -917,13 +936,12 @@ The available setting attributes which can be set at each level are outlined bel
 
 ??? blank "`custom_repo` - Used to set up the custom `repo` [file block type](files.md#location-types-and-paths).<a class="headerlink" href="#custom-repo" title="Permanent link">¶</a>"
 
-    <div id="custom-repo" />Specify where the `repo` attribute's base is when defining `collection_files`, 
-    `metadata_files`, `playlist_file` and `overlay_files`.
+    <div id="custom-repo" />Specify where the `repo` attribute's base is when defining `collection_files`, `metadata_files`, `playlist_file` and `overlay_files`.
     
     ???+ note
     
         Ensure you are using the raw GitHub link (i.e. 
-        https://github.com/meisnate12/Plex-Meta-Manager-Configs/tree/master/meisnate12 )
+        https://github.com/Kometa-Team/Community-Configs/tree/master/meisnate12)
 
     <hr style="margin: 0px;">
     
@@ -939,60 +957,58 @@ The available setting attributes which can be set at each level are outlined bel
         
         ```yaml
         settings:
-          custom_repo: https://github.com/meisnate12/Plex-Meta-Manager-Configs/tree/master/meisnate12
+          custom_repo: https://github.com/Kometa-Team/Community-Configs/tree/master/meisnate12
         ```
 
-??? blank "`verify_ssl` - Turn SSL Verification on or off.<a class="headerlink" href="#verify-ssl" title="Permanent link">¶</a>"
+??? blank "`overlay_artwork_filetype` - Used to control the filetype used with overlay images.<a class="headerlink" href="#overlay-filetype" title="Permanent link">¶</a>"
 
-    <div id="verify-ssl" />Turn SSL Verification on or off.
-    
-    ???+ note
-    
-        set to false if your log file shows any errors similar to "SSL: CERTIFICATE_VERIFY_FAILED"
+    <div id="overlay-filetype" />Used to control the filetype used with overlay images.  This setting will only be applied to images generated after the value is added to your config.
 
     <hr style="margin: 0px;">
     
-    **Attribute:** `verify_ssl`
+    **Attribute:** `overlay_artwork_filetype`
 
-    **Levels with this Attribute:** Global
+    **Levels with this Attribute:** Global/Library
     
-    **Accepted Values:** `true` or `false`
+    **Accepted Values:**
 
-    **Default Value:** `true`
+    <table class="clearTable">
+      <tr><td>`jpg`</td><td>Use JPG files for saving Overlays</td></tr>
+      <tr><td>`png`</td><td>Use PNG files for saving Overlays</td></tr>
+      <tr><td>`webp_lossy`</td><td>Use Lossy WEBP files for saving Overlays</td></tr>
+      <tr><td>`webp_lossless`</td><td>Use Lossless WEBP files for saving Overlays</td></tr>
+    </table>
+
+    **Default Value:** `jpg`
 
     ???+ example "Example"
         
         ```yaml
         settings:
-          verify_ssl: false
+          overlay_artwork_filetype: png
         ```
 
-??? blank "`check_nightly` - Will check nightly for updates instead of develop.<a class="headerlink" href="#check-nightly" title="Permanent link">¶</a>"
+??? blank "`overlay_artwork_quality` - Used to control the JPG or Lossy WEBP quality used with overlay images.<a class="headerlink" href="#overlay-quality" title="Permanent link">¶</a>"
 
-    <div id="check-nightly" />Will check nightly for updates instead of develop. 
-    
-    ???+ note
-    
-        This does not affect which version of PMM is grabbed when using `git pull` or any other update mechanism, it is 
-        only used for the initial version check when PMM runs to specify if a new version is available.
-        
-        It is recommended to set this to `true` if you primarily use the `nightly` branch
+    <div id="overlay-quality" />Used to control the JPG or Lossy WEBP quality used with overlay images. This setting 
+    will only be applied to images generated after the value is added to your config.
 
     <hr style="margin: 0px;">
     
-    **Attribute:** `check_nightly`
+    **Attribute:** `overlay_artwork_quality`
 
-    **Levels with this Attribute:** Global
+    **Levels with this Attribute:** Global/Library
     
-    **Accepted Values:** `true` or `false`
+    **Accepted Values:** Any Integer 1-100 [Values over 95 are not recommended and may result in excessive image size, 
+    perhaps too large to be uploaded to Plex.
 
-    **Default Value:** `false`
+    **Default Value:** `None` [when no value is provided the standard 75 is used]
 
     ???+ example "Example"
         
         ```yaml
         settings:
-          check_nightly: true
+          overlay_artwork_quality: 95
         ```
 
 ## Default Values
@@ -1051,9 +1067,9 @@ libraries:
 settings:
   run_order: #(3)!
   - operations
-  - metadata
+  - overlays
   - collections
-  - operations
+  - metadata
   minimum_items: 1 #(4)!
 ```
 

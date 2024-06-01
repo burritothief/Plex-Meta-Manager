@@ -47,9 +47,8 @@ In addition, templates also have a few special attributes that they can use:
 
 ??? blank "`default` - Sets what template variables default to.<a class="headerlink" href="#default" title="Permanent link">¶</a>"
 
-    <div id="default" />The `default` attribute allows default values for template variables to be used if they're not 
-    specified in the call. It's value is a dictionary of key value pairs where the key is the template variable and the 
-    value is the default value to set it to when not provided.
+    <div id="default" />The `default` attribute allows default values for template variables which will be used if they're not 
+    specified in the call. You need to provide a list of variables and the value that variable should get if not told differently when the template is referenced.  See the tooltips below.
 
     **A variable cannot be default if it is a conditional variable.**
 
@@ -83,13 +82,13 @@ In addition, templates also have a few special attributes that they can use:
         
         1. This sets the default value of the template variable `my_sync_mode` to `sync`.
         2. The value for template variable `my_sync_mode` will replace `<<my_sync_mode>>` here.
-        3. This specifiys that `my_sync_mode` for this definition will be `append`.
+        3. This specifies that `my_sync_mode` for this definition will be `append`.
         4. Since `my_sync_mode` is not passed to this definition the value of `my_sync_mode` will be the default `sync`.
 
 ??? blank "`optional` - List of template variables to be removed when not provided.<a class="headerlink" href="#optional" title="Permanent link">¶</a>"
 
     <div id="optional" />The `optional` attribute can specify variables that when not specified on the template call 
-    will cause any attribute using one of those variables to be ignored in the template. It's value is a list of 
+    will cause any attribute using one of those variables to be ignored in the template. Its value is a list of 
     template variables to be considered optional.
 
     **You can make any template variable optional per collection by setting it to `null`.**
@@ -126,7 +125,7 @@ In addition, templates also have a few special attributes that they can use:
         
         1. This sets the template variable `my_sync_mode` as an optional variable.
         2. The value for template variable `my_sync_mode` will replace `<<my_sync_mode>>` here or removed as optional.
-        3. This specifiys that `my_sync_mode` for this definition will be `append`.
+        3. This specifies that `my_sync_mode` for this definition will be `append`.
         4. Since `my_sync_mode` is not passed to this definition it will ignore the entire `sync_mode` attribute in the 
         template.
 
@@ -145,7 +144,7 @@ In addition, templates also have a few special attributes that they can use:
     A condition block consists of one or more key value pairs comparing given template variables to pre supplied static 
     values. 
 
-    The key is the name of the template variable who's value you want to compare. While the value is the staic value or 
+    The key is the name of the template variable whose value you want to compare, while the value is the static value or 
     values to compare aginst. Every condition block must also have the `value` key which will be the value of the 
     template variable if all the conditions in that block are met.
 
@@ -161,7 +160,7 @@ In addition, templates also have a few special attributes that they can use:
 
     3. Using the exists modifier by appending `.exists` to the key template variable:
 
-        * While `ture` the template variable specified must exist in the template call.
+        * While `true` the template variable specified must exist in the template call.
         * While anything but `true` the template variable specified must not exist in the template call.
 
     ???+ example "Example"
@@ -210,7 +209,7 @@ In addition, templates also have a few special attributes that they can use:
 
     <div id="move-prefix" />The `move_prefix` attribute can be used to specify a list or comma-separated string of 
     prefixes to move to the end of the collection/playlist name for sorting. This changes the template variables
-    `collection_sort` and `playlist_sort`.
+    `collection_sort`, `playlist_sort`, and `mapping_sort`.
 
     ???+ example "Example"
 
@@ -231,7 +230,7 @@ In addition, templates also have a few special attributes that they can use:
               name: Movies
               tmdb_id: 86311
           Iron Man:
-            template:
+    1        template:
               name: Movies
               tmdb_id: 131292
         ```
@@ -241,6 +240,7 @@ Every template also has access to these template variables:
 * Either `<<collection_name>>`, `<<playlist_name>>`, or `<<overlay_name>>` which is the name of the definition.
 * `<<mapping_name>>` is the original mapping name for the definition in the YAML file.
 * Either `<<collection_sort>>` or `<<playlist_sort>>` which is the name of the definition after `move_prefix` is applied.
+* `<<mapping_sort>>` which is the original mapping name for the definition after `move_prefix` is applied.
 * `<<library_type>>` which is the library type (`movie`, `show`, `artist`, `video`).
 * `<<library_name>>` which is the name of the library.
 * All template variables can append `_encoded` to the variable name to use a URL encode version of the variable. ex. 
@@ -382,10 +382,10 @@ collections:
 ```
 
 1. This is wrapped in quotes because it contains a character [`!`] which has 
-[syntactic meaning in YAML files](../pmm/yaml.md#string-literals). This "quoting special characters" is a general YAML 
+[syntactic meaning in YAML files](../kometa/yaml.md#string-literals). This "quoting special characters" is a general YAML 
 requirement, not something specific to `sort_title`.
 2. This is wrapped in quotes because it contains a character [`!`] which has 
-[syntactic meaning in YAML files](../pmm/yaml.md#string-literals). This "quoting special characters" is a general YAML requirement, not something 
+[syntactic meaning in YAML files](../kometa/yaml.md#string-literals). This "quoting special characters" is a general YAML requirement, not something 
 specific to `sort_title`.
 
 You can continue adding definitions this way, but there's a lot of repetition there. Both of these collections have the 
@@ -494,5 +494,5 @@ collections:
 ```
 
 Check out the example files in the 
-[Plex Meta Manager Configs Repository](https://github.com/meisnate12/Plex-Meta-Manager-Configs/tree/master/meisnate12) 
+[Kometa Community Configs Repository](https://github.com/Kometa-Team/Community-Configs/tree/master/meisnate12) 
 for more uses and examples.

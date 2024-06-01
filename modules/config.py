@@ -1,38 +1,37 @@
-import base64, os, re, requests
+import os, re
 from datetime import datetime
-from lxml import html
 from modules import util, radarr, sonarr, operations
 from modules.anidb import AniDB
 from modules.anilist import AniList
 from modules.cache import Cache
 from modules.convert import Convert
 from modules.ergast import Ergast
-from modules.flixpatrol import FlixPatrol
 from modules.icheckmovies import ICheckMovies
 from modules.imdb import IMDb
 from modules.github import GitHub
 from modules.letterboxd import Letterboxd
 from modules.mal import MyAnimeList
 from modules.meta import PlaylistFile
+from modules.mojo import BoxOfficeMojo
 from modules.notifiarr import Notifiarr
+from modules.gotify import Gotify
 from modules.omdb import OMDb
 from modules.overlays import Overlays
 from modules.plex import Plex
 from modules.radarr import Radarr
 from modules.sonarr import Sonarr
 from modules.reciperr import Reciperr
-from modules.mdblist import Mdblist
+from modules.mdblist import MDBList
 from modules.tautulli import Tautulli
 from modules.tmdb import TMDb
 from modules.trakt import Trakt
 from modules.tvdb import TVDb
-from modules.util import Failed, NotScheduled, NotScheduledRange, YAML
+from modules.util import Failed, NotScheduled, NotScheduledRange
 from modules.webhooks import Webhooks
-from retrying import retry
 
 logger = util.logger
 
-mediastingers_url = "https://raw.githubusercontent.com/meisnate12/PMM-Mediastingers/master/stingers.yml"
+mediastingers_url = "https://raw.githubusercontent.com/Kometa-Team/Mediastingers/master/stingers.yml"
 run_order_options = {
     "collections": "Represents Collection Updates",
     "metadata": "Represents Metadata Updates",
@@ -40,6 +39,12 @@ run_order_options = {
     "operations": "Represents Operations Updates"
 }
 sync_modes = {"append": "Only Add Items to the Collection or Playlist", "sync": "Add & Remove Items from the Collection or Playlist"}
+filetype_list = {
+    "jpg": "Use JPG files for saving Overlays",
+    "png": "Use PNG files for saving Overlays",
+    "webp_lossy": "Use Lossy WEBP files for saving Overlays",
+    "webp_lossless": "Use Lossless WEBP files for saving Overlays"
+}
 imdb_label_options = {
     "remove": "Remove All IMDb Parental Labels",
     "none": "Add IMDb Parental Labels for None, Mild, Moderate, or Severe",
@@ -50,12 +55,28 @@ imdb_label_options = {
 mass_genre_options = {
     "lock": "Lock Genre", "unlock": "Unlock Genre", "remove": "Remove and Lock Genre", "reset": "Remove and Unlock Genre",
     "tmdb": "Use TMDb Genres", "imdb": "Use IMDb Genres", "omdb": "Use IMDb Genres through OMDb", "tvdb": "Use TVDb Genres",
-    "anidb": "Use AniDB Main Tags", "anidb_all": "Use All AniDB Tags", "mal": "Use MyAnimeList Genres"
+    "mal": "Use MyAnimeList Genres", "anidb": "Use AniDB Main Tags",
+    "anidb_3_0": "Use AniDB Main Tags and All 3 Star Tags and above", "anidb_2_5": "Use AniDB Main Tags and All 2.5 Star Tags and above",
+    "anidb_2_0": "Use AniDB Main Tags and All 2 Star Tags and above", "anidb_1_5": "Use AniDB Main Tags and All 1.5 Star Tags and above",
+    "anidb_1_0": "Use AniDB Main Tags and All 1 Star Tags and above", "anidb_0_5": "Use AniDB Main Tags and All 0.5 Star Tags and above"
 }
 mass_content_options = {
     "lock": "Lock Rating", "unlock": "Unlock Rating", "remove": "Remove and Lock Rating", "reset": "Remove and Unlock Rating",
-    "omdb": "Use IMDb Rating through OMDb", "mdb": "Use MdbList Rating", "mdb_commonsense": "Use Commonsense Rating through MDbList",
-    "mdb_commonsense0": "Use Commonsense Rating with Zero Padding through MDbList", "mal": "Use MyAnimeList Rating"
+    "omdb": "Use IMDb Rating through OMDb", "mdb": "Use MDBList Rating",
+    "mdb_commonsense": "Use Commonsense Rating through MDBList", "mdb_commonsense0": "Use Commonsense Rating with Zero Padding through MDBList",
+    "mdb_age_rating": "Use MDBList Age Rating", "mdb_age_rating0": "Use MDBList Age Rating with Zero Padding",
+    "mal": "Use MyAnimeList Rating"
+}
+mass_collection_content_options = {
+    "lock": "Lock Rating", "unlock": "Unlock Rating", "remove": "Remove and Lock Rating", "reset": "Remove and Unlock Rating",
+    "highest": "Highest Rating in the collection", "lowest": "Lowest Rating in the collection",
+    "average": "Highest Rating in the collection"
+}
+content_rating_default = {
+    1: [
+
+    ]
+
 }
 mass_studio_options = {
     "lock": "Lock Rating", "unlock": "Unlock Rating", "remove": "Remove and Lock Rating", "reset": "Remove and Unlock Rating",
@@ -68,7 +89,7 @@ mass_original_title_options = {
 }
 mass_available_options = {
     "lock": "Lock Originally Available", "unlock": "Unlock Originally Available", "remove": "Remove and Lock Originally Available", "reset": "Remove and Unlock Originally Available",
-    "tmdb": "Use TMDb Release", "omdb": "Use IMDb Release through OMDb", "mdb": "Use MdbList Release", "tvdb": "Use TVDb Release",
+    "tmdb": "Use TMDb Release", "omdb": "Use IMDb Release through OMDb", "mdb": "Use MDBList Release", "mdb_digital": "Use MDBList Digital Release", "tvdb": "Use TVDb Release",
     "anidb": "Use AniDB Release", "mal": "Use MyAnimeList Release"
 }
 mass_image_options = {
@@ -87,17 +108,17 @@ mass_rating_options = {
     "imdb": "Use IMDb Rating",
     "trakt_user": "Use Trakt User Rating",
     "omdb": "Use IMDb Rating through OMDb",
-    "mdb": "Use MdbList Score",
-    "mdb_average": "Use MdbList Average Score",
-    "mdb_imdb": "Use IMDb Rating through MDbList",
-    "mdb_metacritic": "Use Metacritic Rating through MDbList",
-    "mdb_metacriticuser": "Use Metacritic User Rating through MDbList",
-    "mdb_trakt": "Use Trakt Rating through MDbList",
-    "mdb_tomatoes": "Use Rotten Tomatoes Rating through MDbList",
-    "mdb_tomatoesaudience": "Use Rotten Tomatoes Audience Rating through MDbList",
-    "mdb_tmdb": "Use TMDb Rating through MDbList",
-    "mdb_letterboxd": "Use Letterboxd Rating through MDbList",
-    "mdb_myanimelist": "Use MyAnimeList Rating through MDbList",
+    "mdb": "Use MDBList Score",
+    "mdb_average": "Use MDBList Average Score",
+    "mdb_imdb": "Use IMDb Rating through MDBList",
+    "mdb_metacritic": "Use Metacritic Rating through MDBList",
+    "mdb_metacriticuser": "Use Metacritic User Rating through MDBList",
+    "mdb_trakt": "Use Trakt Rating through MDBList",
+    "mdb_tomatoes": "Use Rotten Tomatoes Rating through MDBList",
+    "mdb_tomatoesaudience": "Use Rotten Tomatoes Audience Rating through MDBList",
+    "mdb_tmdb": "Use TMDb Rating through MDBList",
+    "mdb_letterboxd": "Use Letterboxd Rating through MDBList",
+    "mdb_myanimelist": "Use MyAnimeList Rating through MDBList",
     "anidb_rating": "Use AniDB Rating",
     "anidb_average": "Use AniDB Average",
     "anidb_score": "Use AniDB Review Dcore",
@@ -107,18 +128,19 @@ reset_overlay_options = {"tmdb": "Reset to TMDb poster", "plex": "Reset to Plex 
 library_operations = {
     "assets_for_all": "bool", "split_duplicates": "bool", "update_blank_track_titles": "bool", "remove_title_parentheses": "bool",
     "radarr_add_all_existing": "bool", "radarr_remove_by_tag": "str", "sonarr_add_all_existing": "bool", "sonarr_remove_by_tag": "str",
-    "mass_genre_update": mass_genre_options, "mass_content_rating_update": mass_content_options, "mass_studio_update": mass_studio_options,
+    "mass_content_rating_update": mass_content_options, "mass_collection_content_rating_update": "dict",
+    "mass_genre_update": mass_genre_options, "mass_studio_update": mass_studio_options,
     "mass_audience_rating_update": mass_rating_options, "mass_episode_audience_rating_update": mass_episode_rating_options,
     "mass_critic_rating_update": mass_rating_options, "mass_episode_critic_rating_update": mass_episode_rating_options,
     "mass_user_rating_update": mass_rating_options, "mass_episode_user_rating_update": mass_episode_rating_options,
-    "mass_original_title_update": mass_original_title_options, "mass_originally_available_update": mass_available_options,
-    "mass_imdb_parental_labels": imdb_label_options,
+    "mass_original_title_update": mass_original_title_options, "mass_imdb_parental_labels": imdb_label_options,
+    "mass_originally_available_update": mass_available_options, "mass_added_at_update": mass_available_options,
     "mass_collection_mode": "mass_collection_mode", "mass_poster_update": "dict", "mass_background_update": "dict",
     "metadata_backup": "dict", "delete_collections": "dict", "genre_mapper": "dict", "content_rating_mapper": "dict",
 }
 
 class ConfigFile:
-    def __init__(self, default_dir, attrs, secrets):
+    def __init__(self, in_request, default_dir, attrs, secrets):
         logger.info("Locating config...")
         config_file = attrs["config_file"]
         if config_file and os.path.exists(config_file):                     self.config_path = os.path.abspath(config_file)
@@ -129,10 +151,9 @@ class ConfigFile:
         logger.clear_errors()
 
         self._mediastingers = None
+        self.Requests = in_request
         self.default_dir = default_dir
         self.secrets = secrets
-        self.version = attrs["version"] if "version" in attrs else None
-        self.branch = attrs["branch"] if "branch" in attrs else None
         self.read_only = attrs["read_only"] if "read_only" in attrs else False
         self.no_missing = attrs["no_missing"] if "no_missing" in attrs else None
         self.no_report = attrs["no_report"] if "no_report" in attrs else None
@@ -163,15 +184,16 @@ class ConfigFile:
         self.overlays_only = attrs["overlays_only"] if "overlays_only" in attrs else False
         self.env_plex_url = attrs["plex_url"] if "plex_url" in attrs else ""
         self.env_plex_token = attrs["plex_token"] if "plex_token" in attrs else ""
+        self.tpdb_timer = None
         current_time = datetime.now()
 
         with open(self.config_path, encoding="utf-8") as fp:
             logger.separator("Redacted Config", space=False, border=False, debug=True)
             for line in fp.readlines():
-                logger.debug(re.sub(r"(token|client.*|url|api_*key|secret|error|run_start|run_end|version|changes|username|password): .+", r"\1: (redacted)", line.strip("\r\n")))
+                logger.debug(re.sub(r"(token|client.*|url|api_*key|secret|error|delete|run_start|run_end|version|changes|username|password): .+", r"\1: (redacted)", line.strip("\r\n")))
             logger.debug("")
 
-        self.data = YAML(self.config_path).data
+        self.data = self.Requests.file_yaml(self.config_path).data
 
         def replace_attr(all_data, in_attr, par):
             if "settings" not in all_data:
@@ -286,6 +308,7 @@ class ConfigFile:
         if "omdb" in self.data:                        self.data["omdb"] = self.data.pop("omdb")
         if "mdblist" in self.data:                     self.data["mdblist"] = self.data.pop("mdblist")
         if "notifiarr" in self.data:                   self.data["notifiarr"] = self.data.pop("notifiarr")
+        if "gotify" in self.data:                      self.data["gotify"] = self.data.pop("gotify")
         if "anidb" in self.data:                       self.data["anidb"] = self.data.pop("anidb")
         if "radarr" in self.data:
             if "monitor" in self.data["radarr"] and isinstance(self.data["radarr"]["monitor"], bool):
@@ -320,7 +343,7 @@ class ConfigFile:
         if self.secrets:
             check_next(self.data)
 
-        def check_for_attribute(data, attribute, parent=None, test_list=None, default=None, do_print=True, default_is_none=False, req_default=False, var_type="str", throw=False, save=True, int_min=0):
+        def check_for_attribute(data, attribute, parent=None, test_list=None, translations=None, default=None, do_print=True, default_is_none=False, req_default=False, var_type="str", throw=False, save=True, int_min=0, int_max=None):
             endline = ""
             if parent is not None:
                 if data and parent in data:
@@ -329,39 +352,43 @@ class ConfigFile:
                     data = None
                     do_print = False
                     save = False
+            final_value = data[attribute] if data and attribute in data else None
+            if translations and final_value in translations:
+                final_value = translations[final_value]
             if self.read_only:
                 save = False
             text = f"{attribute} attribute" if parent is None else f"{parent} sub-attribute {attribute}"
             if data is None or attribute not in data:
                 message = f"{text} not found"
                 if parent and save is True:
-                    yaml = YAML(self.config_path)
+                    yaml = self.Requests.file_yaml(self.config_path)
                     endline = f"\n{parent} sub-attribute {attribute} added to config"
                     if parent not in yaml.data or not yaml.data[parent]:                yaml.data[parent] = {attribute: default}
                     elif attribute not in yaml.data[parent]:                            yaml.data[parent][attribute] = default
                     else:                                                               endline = ""
                     yaml.save()
                 if default_is_none and var_type in ["list", "int_list", "lower_list", "list_path"]: return default if default else []
-            elif data[attribute] is None:
+            elif final_value is None:
                 if default_is_none and var_type in ["list", "int_list", "lower_list", "list_path"]: return default if default else []
                 elif default_is_none:                                               return None
                 else:                                                               message = f"{text} is blank"
             elif var_type == "url":
-                if data[attribute].endswith(("\\", "/")):                           return data[attribute][:-1]
-                else:                                                               return data[attribute]
+                if final_value.endswith(("\\", "/")):                               return final_value[:-1]
+                else:                                                               return final_value
             elif var_type == "bool":
-                if isinstance(data[attribute], bool):                               return data[attribute]
+                if isinstance(final_value, bool):                                   return final_value
                 else:                                                               message = f"{text} must be either true or false"
             elif var_type == "int":
-                if isinstance(data[attribute], bool):                               message = f"{text} must an integer >= {int_min}"
-                elif isinstance(data[attribute], int) and data[attribute] >= int_min: return data[attribute]
-                else:                                                               message = f"{text} must an integer >= {int_min}"
+                if isinstance(final_value, int) and final_value >= int_min and (not int_max or final_value <= int_max):
+                    return final_value
+                else:
+                    message = f"{text} must an integer greater than or equal to {int_min}{f' and less than or equal to {int_max}'}"
             elif var_type == "path":
-                if os.path.exists(os.path.abspath(data[attribute])):                return data[attribute]
-                else:                                                               message = f"Path {os.path.abspath(data[attribute])} does not exist"
+                if os.path.exists(os.path.abspath(final_value)):                    return final_value
+                else:                                                               message = f"Path {os.path.abspath(final_value)} does not exist"
             elif var_type in ["list", "lower_list", "int_list"]:
                 output_list = []
-                for output_item in util.get_list(data[attribute], lower=var_type == "lower_list", split=var_type != "list", int_list=var_type == "int_list"):
+                for output_item in util.get_list(final_value, lower=var_type == "lower_list", split=var_type != "list", int_list=var_type == "int_list"):
                     if output_item not in output_list:
                         output_list.append(output_item)
                 failed_items = [o for o in output_list if o not in test_list] if test_list else []
@@ -372,7 +399,7 @@ class ConfigFile:
             elif var_type == "list_path":
                 temp_list = []
                 warning_message = ""
-                for p in util.get_list(data[attribute], split=False):
+                for p in util.get_list(final_value, split=False):
                     if os.path.exists(os.path.abspath(p)):
                         temp_list.append(p)
                     else:
@@ -383,13 +410,13 @@ class ConfigFile:
                     logger.warning(warning_message)
                 if len(temp_list) > 0:                                              return temp_list
                 else:                                                               message = "No Paths exist"
-            elif test_list is None or data[attribute] in test_list:             return data[attribute]
-            else:                                                               message = f"{text}: {data[attribute]} is an invalid input"
+            elif test_list is None or final_value in test_list:                 return final_value
+            else:                                                               message = f"{text}: {final_value} is an invalid input"
             if var_type == "path" and default and os.path.exists(os.path.abspath(default)):
                 return default
             elif var_type == "path" and default:
-                if data and attribute in data and data[attribute]:
-                    message = f"neither {data[attribute]} or the default path {default} could be found"
+                if final_value:
+                    message = f"neither {final_value} or the default path {default} could be found"
                 else:
                     message = f"no {text} found and the default path {default} could not be found"
                 default = None
@@ -410,7 +437,7 @@ class ConfigFile:
                 raise Failed(f"Config Error: {message}")
             if do_print:
                 logger.warning(f"Config Warning: {message}")
-                if data and attribute in data and data[attribute] and test_list is not None and data[attribute] not in test_list:
+                if final_value and test_list is not None and final_value not in test_list:
                     logger.warning(options)
             return default
 
@@ -450,9 +477,10 @@ class ConfigFile:
             "playlist_sync_to_users": check_for_attribute(self.data, "playlist_sync_to_users", parent="settings", default="all", default_is_none=True),
             "playlist_exclude_users": check_for_attribute(self.data, "playlist_exclude_users", parent="settings", default_is_none=True),
             "playlist_report": check_for_attribute(self.data, "playlist_report", parent="settings", var_type="bool", default=True),
-            "verify_ssl": check_for_attribute(self.data, "verify_ssl", parent="settings", var_type="bool", default=True),
+            "verify_ssl": check_for_attribute(self.data, "verify_ssl", parent="settings", var_type="bool", default=True, save=False),
             "custom_repo": check_for_attribute(self.data, "custom_repo", parent="settings", default_is_none=True),
-            "check_nightly": check_for_attribute(self.data, "check_nightly", parent="settings", var_type="bool", default=False),
+            "overlay_artwork_filetype": check_for_attribute(self.data, "overlay_artwork_filetype", parent="settings", test_list=filetype_list, translations={"webp": "webp_lossy"}, default="jpg"),
+            "overlay_artwork_quality": check_for_attribute(self.data, "overlay_artwork_quality", parent="settings", var_type="int", default_is_none=True, int_min=1, int_max=100),
             "assets_for_all": check_for_attribute(self.data, "assets_for_all", parent="settings", var_type="bool", default=False, save=False, do_print=False)
         }
         self.custom_repo = None
@@ -461,8 +489,9 @@ class ConfigFile:
             if "https://github.com/" in repo:
                 repo = repo.replace("https://github.com/", "https://raw.githubusercontent.com/").replace("/tree/", "/")
             self.custom_repo = repo
-        self.check_nightly = self.general["check_nightly"]
-        self.latest_version = util.current_version(self.version, branch=self.branch, nightly=self.check_nightly)
+
+        if not self.general["verify_ssl"]:
+            self.Requests.no_verify_ssl()
 
         add_operations = True if "operations" not in self.general["run_order"] else False
         add_metadata = True if "metadata" not in self.general["run_order"] else False
@@ -486,25 +515,20 @@ class ConfigFile:
                 new_run_order.append("overlays")
             self.general["run_order"] = new_run_order
 
-            yaml = YAML(self.config_path)
-            if "settings" not in yaml.data or not yaml.data["settings"]:
-                yaml.data["settings"] = {}
-            yaml.data["settings"]["run_order"] = new_run_order
-            yaml.save()
-
-        self.session = requests.Session()
-        if not self.general["verify_ssl"]:
-            self.session.verify = False
-            if self.session.verify is False:
-                import urllib3
-                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            config_yaml = self.Requests.file_yaml(self.config_path)
+            if "settings" not in config_yaml.data or not config_yaml.data["settings"]:
+                config_yaml.data["settings"] = {}
+            config_yaml.data["settings"]["run_order"] = new_run_order
+            config_yaml.save()
 
         if self.general["cache"]:
             logger.separator()
             self.Cache = Cache(self.config_path, self.general["cache_expiration"])
         else:
             self.Cache = None
-        self.GitHub = GitHub(self, {"token": check_for_attribute(self.data, "token", parent="github", default_is_none=True)})
+        self.GitHub = GitHub(self.Requests, {
+            "token": check_for_attribute(self.data, "token", parent="github", default_is_none=True)
+        })
 
         logger.separator()
 
@@ -512,7 +536,9 @@ class ConfigFile:
         if "notifiarr" in self.data:
             logger.info("Connecting to Notifiarr...")
             try:
-                self.NotifiarrFactory = Notifiarr(self, {"apikey": check_for_attribute(self.data, "apikey", parent="notifiarr", throw=True)})
+                self.NotifiarrFactory = Notifiarr(self.Requests, {
+                    "apikey": check_for_attribute(self.data, "apikey", parent="notifiarr", throw=True)
+                })
             except Failed as e:
                 if str(e).endswith("is blank"):
                     logger.warning(e)
@@ -523,6 +549,24 @@ class ConfigFile:
         else:
             logger.info("notifiarr attribute not found")
 
+        self.GotifyFactory = None
+        if "gotify" in self.data:
+            logger.info("Connecting to Gotify...")
+            try:
+                self.GotifyFactory = Gotify(self.Requests, {
+                    "url": check_for_attribute(self.data, "url", parent="gotify", throw=True),
+                    "token": check_for_attribute(self.data, "token", parent="gotify", throw=True)
+                })
+            except Failed as e:
+                if str(e).endswith("is blank"):
+                    logger.warning(e)
+                else:
+                    logger.stacktrace()
+                    logger.error(e)
+            logger.info(f"Gotify Connection {'Failed' if self.GotifyFactory is None else 'Successful'}")
+        else:
+            logger.info("gotify attribute not found")
+
         self.webhooks = {
             "error": check_for_attribute(self.data, "error", parent="webhooks", var_type="list", default_is_none=True),
             "version": check_for_attribute(self.data, "version", parent="webhooks", var_type="list", default_is_none=True),
@@ -531,11 +575,11 @@ class ConfigFile:
             "changes": check_for_attribute(self.data, "changes", parent="webhooks", var_type="list", default_is_none=True),
             "delete": check_for_attribute(self.data, "delete", parent="webhooks", var_type="list", default_is_none=True)
         }
-        self.Webhooks = Webhooks(self, self.webhooks, notifiarr=self.NotifiarrFactory)
+        self.Webhooks = Webhooks(self, self.webhooks, notifiarr=self.NotifiarrFactory, gotify=self.GotifyFactory)
         try:
             self.Webhooks.start_time_hooks(self.start_time)
-            if self.version[0] != "Unknown" and self.latest_version[0] != "Unknown" and self.version[1] != self.latest_version[1] or (self.version[2] and self.version[2] < self.latest_version[2]):
-                self.Webhooks.version_hooks(self.version, self.latest_version)
+            if self.Requests.has_new_version():
+                self.Webhooks.version_hooks()
         except Failed as e:
             logger.stacktrace()
             logger.error(f"Webhooks Error: {e}")
@@ -565,7 +609,7 @@ class ConfigFile:
             if "omdb" in self.data:
                 logger.info("Connecting to OMDb...")
                 try:
-                    self.OMDb = OMDb(self, {
+                    self.OMDb = OMDb(self.Requests, self.Cache, {
                         "apikey": check_for_attribute(self.data, "apikey", parent="omdb", throw=True),
                         "expiration": check_for_attribute(self.data, "cache_expiration", parent="omdb", var_type="int", default=60, int_min=1)
                     })
@@ -580,21 +624,21 @@ class ConfigFile:
 
             logger.separator()
 
-            self.Mdblist = Mdblist(self)
+            self.MDBList = MDBList(self.Requests, self.Cache)
             if "mdblist" in self.data:
-                logger.info("Connecting to Mdblist...")
+                logger.info("Connecting to MDBList...")
                 try:
-                    self.Mdblist.add_key(
+                    self.MDBList.add_key(
                         check_for_attribute(self.data, "apikey", parent="mdblist", throw=True),
                         check_for_attribute(self.data, "cache_expiration", parent="mdblist", var_type="int", default=60, int_min=1)
                     )
-                    logger.info("Mdblist Connection Successful")
+                    logger.info("MDBList Connection Successful")
                 except Failed as e:
                     if str(e).endswith("is blank"):
                         logger.warning(e)
                     else:
                         logger.error(e)
-                    logger.info("Mdblist Connection Failed")
+                    logger.info("MDBList Connection Failed")
             else:
                 logger.info("mdblist attribute not found")
 
@@ -604,7 +648,7 @@ class ConfigFile:
             if "trakt" in self.data:
                 logger.info("Connecting to Trakt...")
                 try:
-                    self.Trakt = Trakt(self, {
+                    self.Trakt = Trakt(self.Requests, self.read_only, {
                         "client_id": check_for_attribute(self.data, "client_id", parent="trakt", throw=True),
                         "client_secret": check_for_attribute(self.data, "client_secret", parent="trakt", throw=True),
                         "pin":  check_for_attribute(self.data, "pin", parent="trakt", default_is_none=True),
@@ -626,7 +670,7 @@ class ConfigFile:
             if "mal" in self.data:
                 logger.info("Connecting to My Anime List...")
                 try:
-                    self.MyAnimeList = MyAnimeList(self, {
+                    self.MyAnimeList = MyAnimeList(self.Requests, self.Cache, self.read_only, {
                         "client_id": check_for_attribute(self.data, "client_id", parent="mal", throw=True),
                         "client_secret": check_for_attribute(self.data, "client_secret", parent="mal", throw=True),
                         "localhost_url": check_for_attribute(self.data, "localhost_url", parent="mal", default_is_none=True),
@@ -643,7 +687,9 @@ class ConfigFile:
             else:
                 logger.info("mal attribute not found")
 
-            self.AniDB = AniDB(self, {"language": check_for_attribute(self.data, "language", parent="anidb", default="en")})
+            self.AniDB = AniDB(self.Requests, self.Cache, {
+                "language": check_for_attribute(self.data, "language", parent="anidb", default="en")
+            })
             if "anidb" in self.data:
                 logger.separator()
                 logger.info("Connecting to AniDB...")
@@ -675,16 +721,14 @@ class ConfigFile:
 
             self.playlist_names = []
             self.playlist_files = []
-            if "playlist_files" in self.data:
+            if "playlist_files" not in self.data:
+                logger.info("playlist_files attribute not found")
+            elif not self.data["playlist_files"]:
+                logger.info("playlist_files attribute is blank")
+            else:
                 logger.info("")
                 logger.info("Reading in Playlist Files")
-                if self.data["playlist_files"]:
-                    paths_to_check = self.data["playlist_files"]
-                else:
-                    default_playlist_file = os.path.abspath(os.path.join(self.default_dir, "playlists.yml"))
-                    logger.warning(f"Config Warning: playlist_files attribute is blank using default: {default_playlist_file}")
-                    paths_to_check = [default_playlist_file]
-                files, had_scheduled = util.load_files(paths_to_check, "playlist_files", schedule=(current_time, self.run_hour, self.ignore_schedules))
+                files, had_scheduled = util.load_files(self.data["playlist_files"], "playlist_files", schedule=(current_time, self.run_hour, self.ignore_schedules))
                 if not files and not had_scheduled:
                     raise Failed("Config Error: No Paths Found for playlist_files")
                 for file_type, playlist_file, temp_vars, asset_directory in files:
@@ -698,18 +742,16 @@ class ConfigFile:
                     except NotScheduled as e:
                         logger.info("")
                         logger.separator(f"Skipping {e} Playlist File")
-            else:
-                logger.info("playlist_files attribute not found")
 
-            self.TVDb = TVDb(self, self.general["tvdb_language"], self.general["cache_expiration"])
-            self.IMDb = IMDb(self)
-            self.Convert = Convert(self)
-            self.AniList = AniList(self)
-            self.FlixPatrol = FlixPatrol(self)
-            self.ICheckMovies = ICheckMovies(self)
-            self.Letterboxd = Letterboxd(self)
-            self.Reciperr = Reciperr(self)
-            self.Ergast = Ergast(self)
+            self.TVDb = TVDb(self.Requests, self.Cache, self.general["tvdb_language"], self.general["cache_expiration"])
+            self.IMDb = IMDb(self.Requests, self.Cache, self.default_dir)
+            self.Convert = Convert(self.Requests, self.Cache, self.TMDb)
+            self.AniList = AniList(self.Requests)
+            self.ICheckMovies = ICheckMovies(self.Requests)
+            self.Letterboxd = Letterboxd(self.Requests, self.Cache)
+            self.BoxOfficeMojo = BoxOfficeMojo(self.Requests, self.Cache)
+            self.Reciperr = Reciperr(self.Requests)
+            self.Ergast = Ergast(self.Requests, self.Cache)
 
             logger.separator()
 
@@ -719,17 +761,25 @@ class ConfigFile:
                 "url": check_for_attribute(self.data, "url", parent="plex", var_type="url", default_is_none=True),
                 "token": check_for_attribute(self.data, "token", parent="plex", default_is_none=True),
                 "timeout": check_for_attribute(self.data, "timeout", parent="plex", var_type="int", default=60),
-                "db_cache": check_for_attribute(self.data, "db_cache", parent="plex", var_type="int", default_is_none=True),
-                "clean_bundles": check_for_attribute(self.data, "clean_bundles", parent="plex", var_type="bool", default=False),
-                "empty_trash": check_for_attribute(self.data, "empty_trash", parent="plex", var_type="bool", default=False),
-                "optimize": check_for_attribute(self.data, "optimize", parent="plex", var_type="bool", default=False)
+                "verify_ssl": check_for_attribute(self.data, "verify_ssl", parent="plex", var_type="bool", default_is_none=True),
+                "db_cache": check_for_attribute(self.data, "db_cache", parent="plex", var_type="int", default_is_none=True)
             }
+            for attr in ["clean_bundles", "empty_trash", "optimize"]:
+                try:
+                    self.general["plex"][attr] = check_for_attribute(self.data, attr, parent="plex", var_type="bool", default=False, throw=True)
+                except Failed as e:
+                    if "plex" in self.data and attr in self.data["plex"] and self.data["plex"][attr]:
+                        self.general["plex"][attr] = self.data["plex"][attr]
+                    else:
+                        self.general["plex"][attr] = False
+                        logger.warning(str(e).replace("Error", "Warning"))
             self.general["radarr"] = {
                 "url": check_for_attribute(self.data, "url", parent="radarr", var_type="url", default_is_none=True),
                 "token": check_for_attribute(self.data, "token", parent="radarr", default_is_none=True),
                 "add_missing": check_for_attribute(self.data, "add_missing", parent="radarr", var_type="bool", default=False),
                 "add_existing": check_for_attribute(self.data, "add_existing", parent="radarr", var_type="bool", default=False),
                 "upgrade_existing": check_for_attribute(self.data, "upgrade_existing", parent="radarr", var_type="bool", default=False),
+                "monitor_existing": check_for_attribute(self.data, "monitor_existing", parent="radarr", var_type="bool", default=False),
                 "ignore_cache": check_for_attribute(self.data, "ignore_cache", parent="radarr", var_type="bool", default=False),
                 "root_folder_path": check_for_attribute(self.data, "root_folder_path", parent="radarr", default_is_none=True),
                 "monitor": check_for_attribute(self.data, "monitor", parent="radarr", var_type="bool", default=True),
@@ -746,6 +796,7 @@ class ConfigFile:
                 "add_missing": check_for_attribute(self.data, "add_missing", parent="sonarr", var_type="bool", default=False),
                 "add_existing": check_for_attribute(self.data, "add_existing", parent="sonarr", var_type="bool", default=False),
                 "upgrade_existing": check_for_attribute(self.data, "upgrade_existing", parent="sonarr", var_type="bool", default=False),
+                "monitor_existing": check_for_attribute(self.data, "monitor_existing", parent="sonarr", var_type="bool", default=False),
                 "ignore_cache": check_for_attribute(self.data, "ignore_cache", parent="sonarr", var_type="bool", default=False),
                 "root_folder_path": check_for_attribute(self.data, "root_folder_path", parent="sonarr", default_is_none=True),
                 "monitor": check_for_attribute(self.data, "monitor", parent="sonarr", test_list=sonarr.monitor_descriptions, default="all"),
@@ -809,6 +860,8 @@ class ConfigFile:
                 params["ignore_ids"].extend([i for i in self.general["ignore_ids"] if i not in params["ignore_ids"]])
                 params["ignore_imdb_ids"] = check_for_attribute(lib, "ignore_imdb_ids", parent="settings", var_type="lower_list", default_is_none=True, do_print=False, save=False)
                 params["ignore_imdb_ids"].extend([i for i in self.general["ignore_imdb_ids"] if i not in params["ignore_imdb_ids"]])
+                params["overlay_artwork_filetype"] = check_for_attribute(lib, "overlay_artwork_filetype", parent="settings", test_list=filetype_list, translations={"webp": "webp_lossy"}, default=self.general["overlay_artwork_filetype"], do_print=False, save=False)
+                params["overlay_artwork_quality"] = check_for_attribute(lib, "overlay_artwork_quality", parent="settings", var_type="int", default=self.general["overlay_artwork_quality"], default_is_none=True, int_min=1, int_max=100, do_print=False, save=False)
                 params["changes_webhooks"] = check_for_attribute(lib, "changes", parent="webhooks", var_type="list", default=self.webhooks["changes"], do_print=False, save=False, default_is_none=True)
                 params["report_path"] = None
                 if lib and "report_path" in lib and lib["report_path"]:
@@ -845,28 +898,52 @@ class ConfigFile:
                         for op, data_type in library_operations.items():
                             if op not in config_op:
                                 continue
-                            if isinstance(data_type, list):
+                            if op == "mass_imdb_parental_labels":
                                 section_final[op] = check_for_attribute(config_op, op, test_list=data_type, default_is_none=True, save=False)
+                            elif isinstance(data_type, dict):
+                                try:
+                                    if not config_op[op]:
+                                        raise Failed("is blank")
+                                    input_list = config_op[op] if isinstance(config_op[op], list) else [config_op[op]]
+                                    final_list = []
+                                    for list_attr in input_list:
+                                        if not list_attr:
+                                            raise Failed(f"has a blank value")
+                                        if str(list_attr).lower() in data_type:
+                                            final_list.append(str(list_attr).lower())
+                                        elif op in ["mass_content_rating_update", "mass_studio_update", "mass_original_title_update"]:
+                                            final_list.append(str(list_attr))
+                                        elif op == "mass_genre_update":
+                                            final_list.append(list_attr if isinstance(list_attr, list) else [list_attr])
+                                        elif op in ["mass_originally_available_update", "mass_added_at_update"]:
+                                            final_list.append(util.validate_date(list_attr))
+                                        elif op.endswith("rating_update"):
+                                            final_list.append(util.check_int(list_attr, datatype="float", minimum=0, maximum=10, throw=True))
+                                        else:
+                                            raise Failed(f"has an invalid value: {list_attr}")
+                                    section_final[op] = final_list
+                                except Failed as e:
+                                    logger.error(f"Config Error: {op} {e}")
                             elif op == "mass_collection_mode":
                                 section_final[op] = util.check_collection_mode(config_op[op])
                             elif data_type == "dict":
                                 input_dict = config_op[op]
-                                if op in ["mass_poster_update", "mass_background_update"] and input_dict and not isinstance(input_dict, dict):
+                                if op in ["mass_poster_update", "mass_background_update", "mass_collection_content_rating_update"] and input_dict and not isinstance(input_dict, dict):
                                     input_dict = {"source": input_dict}
 
                                 if not input_dict or not isinstance(input_dict, dict):
                                     raise Failed(f"Config Error: {op} must be a dictionary")
-                                if op in ["mass_poster_update", "mass_background_update"]:
+                                elif op in ["mass_poster_update", "mass_background_update"]:
                                     section_final[op] = {
                                         "source": check_for_attribute(input_dict, "source", test_list=mass_image_options, default_is_none=True, save=False),
                                         "seasons": check_for_attribute(input_dict, "seasons", var_type="bool", default=True, save=False),
                                         "episodes": check_for_attribute(input_dict, "episodes", var_type="bool", default=True, save=False),
                                     }
-                                if op == "metadata_backup":
+                                elif op == "metadata_backup":
                                     default_path = os.path.join(default_dir, f"{str(library_name)}_Metadata_Backup.yml")
                                     if "path" not in input_dict:
                                         logger.warning(f"Config Warning: path attribute not found using default: {default_path}")
-                                    if "path" in input_dict and not input_dict["path"]:
+                                    elif "path" in input_dict and not input_dict["path"]:
                                         logger.warning(f"Config Warning: path attribute blank using default: {default_path}")
                                     else:
                                         default_path = input_dict["path"]
@@ -876,7 +953,7 @@ class ConfigFile:
                                         "sync_tags": check_for_attribute(input_dict, "sync_tags", var_type="bool", default=False, save=False),
                                         "add_blank_entries": check_for_attribute(input_dict, "add_blank_entries", var_type="bool", default=True, save=False)
                                     }
-                                if "mapper" in op:
+                                elif "mapper" in op:
                                     section_final[op] = {}
                                     for old_value, new_value in input_dict.items():
                                         if not old_value:
@@ -885,11 +962,16 @@ class ConfigFile:
                                             logger.warning(f"Config Warning: {op} value '{new_value}' ignored as it cannot be mapped to itself")
                                         else:
                                             section_final[op][str(old_value)] = str(new_value) if new_value else None # noqa
-                                if op == "delete_collections":
+                                elif op == "delete_collections":
                                     section_final[op] = {
                                         "managed": check_for_attribute(input_dict, "managed", var_type="bool", default_is_none=True, save=False),
                                         "configured": check_for_attribute(input_dict, "configured", var_type="bool", default_is_none=True, save=False),
                                         "less": check_for_attribute(input_dict, "less", var_type="int", default_is_none=True, save=False, int_min=1),
+                                    }
+                                elif op == "mass_collection_content_rating_update":
+                                    section_final[op] = {
+                                        "source": check_for_attribute(input_dict, "source", test_list=mass_collection_content_options, default_is_none=True, save=False),
+                                        "ranking": check_for_attribute(input_dict, "ranking", var_type="list", default=content_rating_default, save=False),
                                     }
                             else:
                                 section_final[op] = check_for_attribute(config_op, op, var_type=data_type, default=False, save=False)
@@ -901,24 +983,28 @@ class ConfigFile:
                                 logger.warning(f"Config Warning: Operation {k} already scheduled")
                     for k, v in final_operations.items():
                         params[k] = v
-                def error_check(err_attr, service):
-                    logger.error(f"Config Error: Operation {err_attr} cannot be {params[err_attr]} without a successful {service} Connection")
-                    params[err_attr] = None
 
                 for mass_key in operations.meta_operations:
                     if not params[mass_key]:
                         continue
-                    source = params[mass_key]["source"] if isinstance(params[mass_key], dict) else params[mass_key]
-                    if source == "omdb" and self.OMDb is None:
-                        error_check(mass_key, "OMDb")
-                    if source and source.startswith("mdb") and not self.Mdblist.has_key:
-                        error_check(mass_key, "MdbList")
-                    if source and source.startswith("anidb") and not self.AniDB.is_authorized:
-                        error_check(mass_key, "AniDB")
-                    if source and source.startswith("mal") and self.MyAnimeList is None:
-                        error_check(mass_key, "MyAnimeList")
-                    if source and source.startswith("trakt") and self.Trakt is None:
-                        error_check(mass_key, "Trakt")
+                    sources = params[mass_key]["source"] if isinstance(params[mass_key], dict) else params[mass_key]
+                    if not isinstance(sources, list):
+                        sources = [sources]
+                    try:
+                        for source in sources:
+                            if source and source == "omdb" and self.OMDb is None:
+                                raise Failed(f"{source} without a successful OMDb Connection")
+                            if source and str(source).startswith("mdb") and not self.MDBList.has_key:
+                                raise Failed(f"{source} without a successful MDBList Connection")
+                            if source and str(source).startswith("anidb") and not self.AniDB.is_authorized:
+                                raise Failed(f"{source} without a successful AniDB Connection")
+                            if source and str(source).startswith("mal") and self.MyAnimeList is None:
+                                raise Failed(f"{source} without a successful MyAnimeList Connection")
+                            if source and str(source).startswith("trakt") and self.Trakt is None:
+                                raise Failed(f"{source} without a successful Trakt Connection")
+                    except Failed as e:
+                        logger.error(f"Config Error: {mass_key} cannot use {e}")
+                        params[mass_key] = None
 
                 lib_vars = {}
                 if lib and "template_variables" in lib and lib["template_variables"] and isinstance(lib["template_variables"], dict):
@@ -984,18 +1070,18 @@ class ConfigFile:
                                 if ("remove_overlays" in file and file["remove_overlays"] is True) \
                                         or ("remove_overlay" in file and file["remove_overlay"] is True) \
                                         or ("revert_overlays" in file and file["revert_overlays"] is True):
-                                    logger.warning("Config Warning: remove_overlays under overlay_files is depreciated it now goes directly under the library attribute.")
+                                    logger.warning("Config Warning: remove_overlays under overlay_files is deprecated it now goes directly under the library attribute.")
                                     params["remove_overlays"] = True
                                 if ("reapply_overlays" in file and file["reapply_overlays"] is True) \
                                         or ("reapply_overlay" in file and file["reapply_overlay"] is True):
-                                    logger.warning("Config Warning: reapply_overlays under overlay_files is depreciated it now goes directly under the library attribute.")
+                                    logger.warning("Config Warning: reapply_overlays under overlay_files is deprecated it now goes directly under the library attribute.")
                                     params["reapply_overlays"] = True
                                 if "reset_overlays" in file or "reset_overlay" in file:
                                     attr = f"reset_overlay{'s' if 'reset_overlays' in file else ''}"
-                                    logger.warning("Config Warning: reset_overlays under overlay_files is depreciated it now goes directly under the library attribute.")
+                                    logger.warning("Config Warning: reset_overlays under overlay_files is deprecated it now goes directly under the library attribute.")
                                     old_reset = file[attr]
                                 if "schedule" in file and file["schedule"]:
-                                    logger.warning("Config Warning: schedule under overlay_files is depreciated it now goes directly under the library attribute as schedule_overlays.")
+                                    logger.warning("Config Warning: schedule under overlay_files is deprecated it now goes directly under the library attribute as schedule_overlays.")
                                     old_schedule = file["schedule"]
                         params["overlay_files"] = files
                     except Failed as e:
@@ -1071,11 +1157,22 @@ class ConfigFile:
                         "url": check_for_attribute(lib, "url", parent="plex", var_type="url", default=self.general["plex"]["url"], req_default=True, save=False),
                         "token": check_for_attribute(lib, "token", parent="plex", default=self.general["plex"]["token"], req_default=True, save=False),
                         "timeout": check_for_attribute(lib, "timeout", parent="plex", var_type="int", default=self.general["plex"]["timeout"], save=False),
-                        "db_cache": check_for_attribute(lib, "db_cache", parent="plex", var_type="int", default=self.general["plex"]["db_cache"], default_is_none=True, save=False),
-                        "clean_bundles": check_for_attribute(lib, "clean_bundles", parent="plex", var_type="bool", default=self.general["plex"]["clean_bundles"], save=False),
-                        "empty_trash": check_for_attribute(lib, "empty_trash", parent="plex", var_type="bool", default=self.general["plex"]["empty_trash"], save=False),
-                        "optimize": check_for_attribute(lib, "optimize", parent="plex", var_type="bool", default=self.general["plex"]["optimize"], save=False)
+                        "verify_ssl": check_for_attribute(lib, "verify_ssl", parent="plex", var_type="bool", default=self.general["plex"]["verify_ssl"], default_is_none=True, save=False),
+                        "db_cache": check_for_attribute(lib, "db_cache", parent="plex", var_type="int", default=self.general["plex"]["db_cache"], default_is_none=True, save=False)
                     }
+                    for attr in ["clean_bundles", "empty_trash", "optimize"]:
+                        try:
+                            params["plex"][attr] = check_for_attribute(lib, attr, parent="plex", var_type="bool", save=False, throw=True)
+                        except Failed:
+                            test_attr = lib["plex"][attr] if "plex" in lib and attr in lib["plex"] and lib["plex"][attr] else self.general["plex"][attr]
+                            params["plex"][attr] = False
+                            if test_attr is not True and test_attr is not False:
+                                try:
+                                    util.schedule_check(attr, test_attr, current_time, self.run_hour)
+                                    params["plex"][attr] = True
+                                except NotScheduled:
+                                    logger.info(f"Skipping Operation Not Scheduled for {test_attr}")
+
                     if params["plex"]["url"].lower() == "env":
                         params["plex"]["url"] = self.env_plex_url
                     if params["plex"]["token"].lower() == "env":
@@ -1102,12 +1199,13 @@ class ConfigFile:
                     logger.info(f"Connecting to {display_name} library's Radarr...")
                     logger.info("")
                     try:
-                        library.Radarr = Radarr(self, library, {
+                        library.Radarr = Radarr(self.Requests, self.Cache, library, {
                             "url": check_for_attribute(lib, "url", parent="radarr", var_type="url", default=self.general["radarr"]["url"], req_default=True, save=False),
                             "token": check_for_attribute(lib, "token", parent="radarr", default=self.general["radarr"]["token"], req_default=True, save=False),
                             "add_missing": check_for_attribute(lib, "add_missing", parent="radarr", var_type="bool", default=self.general["radarr"]["add_missing"], save=False),
                             "add_existing": check_for_attribute(lib, "add_existing", parent="radarr", var_type="bool", default=self.general["radarr"]["add_existing"], save=False),
                             "upgrade_existing": check_for_attribute(lib, "upgrade_existing", parent="radarr", var_type="bool", default=self.general["radarr"]["upgrade_existing"], save=False),
+                            "monitor_existing": check_for_attribute(lib, "monitor_existing", parent="radarr", var_type="bool", default=self.general["radarr"]["monitor_existing"], save=False),
                             "ignore_cache": check_for_attribute(lib, "ignore_cache", parent="radarr", var_type="bool", default=self.general["radarr"]["ignore_cache"], save=False),
                             "root_folder_path": check_for_attribute(lib, "root_folder_path", parent="radarr", default=self.general["radarr"]["root_folder_path"], req_default=True, save=False),
                             "monitor": check_for_attribute(lib, "monitor", parent="radarr", var_type="bool", default=self.general["radarr"]["monitor"], save=False),
@@ -1131,12 +1229,13 @@ class ConfigFile:
                     logger.info(f"Connecting to {display_name} library's Sonarr...")
                     logger.info("")
                     try:
-                        library.Sonarr = Sonarr(self, library, {
+                        library.Sonarr = Sonarr(self.Requests, self.Cache, library, {
                             "url": check_for_attribute(lib, "url", parent="sonarr", var_type="url", default=self.general["sonarr"]["url"], req_default=True, save=False),
                             "token": check_for_attribute(lib, "token", parent="sonarr", default=self.general["sonarr"]["token"], req_default=True, save=False),
                             "add_missing": check_for_attribute(lib, "add_missing", parent="sonarr", var_type="bool", default=self.general["sonarr"]["add_missing"], save=False),
                             "add_existing": check_for_attribute(lib, "add_existing", parent="sonarr", var_type="bool", default=self.general["sonarr"]["add_existing"], save=False),
                             "upgrade_existing": check_for_attribute(lib, "upgrade_existing", parent="sonarr", var_type="bool", default=self.general["sonarr"]["upgrade_existing"], save=False),
+                            "monitor_existing": check_for_attribute(lib, "monitor_existing", parent="sonarr", var_type="bool", default=self.general["sonarr"]["monitor_existing"], save=False),
                             "ignore_cache": check_for_attribute(lib, "ignore_cache", parent="sonarr", var_type="bool", default=self.general["sonarr"]["ignore_cache"], save=False),
                             "root_folder_path": check_for_attribute(lib, "root_folder_path", parent="sonarr", default=self.general["sonarr"]["root_folder_path"], req_default=True, save=False),
                             "monitor": check_for_attribute(lib, "monitor", parent="sonarr", test_list=sonarr.monitor_descriptions, default=self.general["sonarr"]["monitor"], save=False),
@@ -1163,7 +1262,7 @@ class ConfigFile:
                     logger.info(f"Connecting to {display_name} library's Tautulli...")
                     logger.info("")
                     try:
-                        library.Tautulli = Tautulli(self, library, {
+                        library.Tautulli = Tautulli(self.Requests, library, {
                             "url": check_for_attribute(lib, "url", parent="tautulli", var_type="url", default=self.general["tautulli"]["url"], req_default=True, save=False),
                             "apikey": check_for_attribute(lib, "apikey", parent="tautulli", default=self.general["tautulli"]["apikey"], req_default=True, save=False)
                         })
@@ -1173,7 +1272,7 @@ class ConfigFile:
                         logger.info("")
                     logger.info(f"{display_name} library's Tautulli Connection {'Failed' if library.Tautulli is None else 'Successful'}")
 
-                library.Webhooks = Webhooks(self, {}, library=library, notifiarr=self.NotifiarrFactory)
+                library.Webhooks = Webhooks(self, {}, library=library, notifiarr=self.NotifiarrFactory, gotify=self.GotifyFactory)
                 library.Overlays = Overlays(self, library)
 
                 logger.info("")
@@ -1214,44 +1313,8 @@ class ConfigFile:
             logger.stacktrace()
             logger.error(f"Webhooks Error: {e}")
 
-    def get_html(self, url, headers=None, params=None):
-        return html.fromstring(self.get(url, headers=headers, params=params).content)
-
-    def get_json(self, url, json=None, headers=None, params=None):
-        response = self.get(url, json=json, headers=headers, params=params)
-        try:
-            return response.json()
-        except ValueError:
-            logger.error(str(response.content))
-            raise
-
-    @retry(stop_max_attempt_number=6, wait_fixed=10000)
-    def get(self, url, json=None, headers=None, params=None):
-        return self.session.get(url, json=json, headers=headers, params=params)
-
-    def get_image_encoded(self, url):
-        return base64.b64encode(self.get(url).content).decode('utf-8')
-
-    def post_html(self, url, data=None, json=None, headers=None):
-        return html.fromstring(self.post(url, data=data, json=json, headers=headers).content)
-
-    def post_json(self, url, data=None, json=None, headers=None):
-        response = self.post(url, data=data, json=json, headers=headers)
-        try:
-            return response.json()
-        except ValueError:
-            logger.error(str(response.content))
-            raise
-
-    @retry(stop_max_attempt_number=6, wait_fixed=10000)
-    def post(self, url, data=None, json=None, headers=None):
-        return self.session.post(url, data=data, json=json, headers=headers)
-
-    def load_yaml(self, url):
-        return YAML(input_data=self.get(url).content).data
-
     @property
     def mediastingers(self):
         if self._mediastingers is None:
-            self._mediastingers = self.load_yaml(mediastingers_url)
+            self._mediastingers = self.Requests.get_yaml(mediastingers_url)
         return self._mediastingers

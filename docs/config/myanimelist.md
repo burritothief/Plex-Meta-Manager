@@ -25,17 +25,17 @@ mal:
 | `client_secret` | MyAnimeList Application Client Secret | :fontawesome-solid-circle-check:{ .green } |
 | `localhost_url` | MyAnimeList Authorization URL         |  :fontawesome-solid-circle-xmark:{ .red }  |
 
-All other attributes will be filled in by Plex Meta Manager.
+All other attributes will be filled in by Kometa.
 
-To connect to MyAnimeList.net you must create a MyAnimeList application and supply Plex Meta Manager the `client id` and
+To connect to MyAnimeList.net you must create a MyAnimeList application and supply Kometa the `client id` and
 `client secret` provided, please do the following:
 
 1. [Click here to create a MyAnimeList API application.](https://myanimelist.net/apiconfig/create)
-2. Enter an `App Name` for the application. Ex. `Plex Meta Manager`
+2. Enter an `App Name` for the application. Ex. `Kometa`
 3. Select `web` for `App Type`.
-4. Enter an `App Description` for the application Ex. `Plex Meta Manager manages metadata and collections`
+4. Enter an `App Description` for the application Ex. `Kometa manages metadata and collections`
 5. Enter `http://localhost/` for `App Redirect URL`.
-6. Enter `https://github.com/meisnate12/Plex-Meta-Manager` for `Homepage URL`.
+6. Enter `https://github.com/Kometa-Team/Kometa` for `Homepage URL`.
 7. Select `non-commercial` for `Commercial / Non-Commercial`.
 8. Enter any name under `Name / Company Name`.
 9. Select `hobbyist` for `Purpose of Use`.
@@ -66,19 +66,19 @@ To connect to MyAnimeList.net you must create a MyAnimeList application and supp
     
      You will need to stop that web server while you're doing this in order to grab that localhost URL.
 
-19. Run PMM and the auth will be completed.
+19. Run Kometa and the authentication will be completed.
 
-## Alternative Way of Letting PMM make the URL
+## Alternative Way of Letting Kometa make the URL
 
-You can record just your `client_id` and `client_secret` and pmm will create the url for you described below.
+You can record just your `client_id` and `client_secret` and Kometa will create the url for you described below.
 
-On the first run, Plex Meta Manager will walk the user through the OAuth flow by producing a MyAnimeList URL for the 
+On the first run, Kometa will walk the user through the OAuth flow by producing a MyAnimeList URL for the 
 user to follow. 
 
 After following the URL login to MyAnimeList.net and authorize the application by clicking the `Allow` button which will 
 redirect the user to `http://localhost/`. 
 
-Copy the entire URL and paste it into Plex Meta Manager and if the URL is correct then Plex Meta Manager will populate 
+Copy the entire URL and paste it into Kometa and if the URL is correct then Kometa will populate 
 the `authorization` sub-attributes to use in subsequent runs.
 
 On first run:
@@ -112,7 +112,7 @@ You will need to stop that web server while you're doing this in order to grab t
 
 ```
 | URL: http://localhost/?code=BOING
-| Saving authorization information to /path/to/Plex-Meta-Manager/config/config.yml |
+| Saving authorization information to /path/to/kometa/config/config.yml |
 | My Anime List Connection Successful                                                                |
 |====================================================================================================|
 
@@ -124,13 +124,9 @@ To authenticate MyAnimeList the first time, you need run the container with the 
 OAuth flow mentioned above. Once you have the MyAnimeList authentication data saved into the YAML, you'll be able to run 
 the container normally.
 
-## Online Authorization Script
+## Online Authorization
 
-Plex Meta Manager requires interactive mode to be able to enter the Client ID and Client Secret. Some systems (namely 
-NAS) make this difficult to accomplish. Chazlarson has developed an online script that can be run to generate the MAL 
-and Trakt authentication outside of Plex Meta Manager and then paste the end-result directly into the configuration 
-file.
-
-The Online Auth tool can be found [here](https://replit.com/@chazlarson/MALAuth).
-
-Simply press the play button, wait a little bit, and then follow the on-screen prompts.
+{%    
+  include-markdown "./authentication.md"
+  start="# Trakt and MyAnimeList Authentication"
+%}

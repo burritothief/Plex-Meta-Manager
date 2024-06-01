@@ -10,8 +10,8 @@ be used as a backup for these in the event of a restore requirement.
     Playlists are defined in one or more Playlist files that are mapped in the 
     [Playlist Files Attribute](../config/playlists.md) within the Configuration File.
 
-You can use the [`playlist_report` setting](../config/settings.md) to get a list of your playlists printed out in your 
-log. 
+You can use the [`playlist_report` setting](../config/settings.md#playlist-report) to get a list of your playlists 
+printed out in your log. 
 
 ## Example
 
@@ -20,24 +20,6 @@ location mapped as `config` in my setup.
 
 
 ???+ example "Example "MyPlaylists.yml""
-
-    Click the :fontawesome-solid-circle-plus: icon to learn more
-
-    ```yaml
-    collections: #(1)!
-       Top 50 Grossing Films of All Time (Worldwide):
-        tmdb_list: 10 #(2)!
-        collection_order: custom #(3)!
-        sync_mode: sync #(4)!
-    ```
-
-    1.  This must appear once and **only once** in any Metadata file
-    2.  This creates a collection based on tmdb list ID 10, https://www.themoviedb.org/list/10 would also be accepted
-    3.  This will sort the items in the Plex collection to be the same as the order in the list
-    4.  Syncs the collection to the list, so that if an item is added/removed from the list, the same is done to the 
-    collection. Set this to `append` if you only want it to add things and not remove them.
-
-???+ example "config.yml Example Collection File Addition"
 
     Click the :fontawesome-solid-circle-plus: icon to learn more
 
@@ -78,11 +60,11 @@ This file would then be defined in my `config.yml` file as a `playlist_files` it
 
     1.  Note that Playlist files are not called within the `libraries` section, they are defined at the root identation 
     as you can see here
-    2.  `config` refers to the location that you mapped to `config` when following the PMM Installation Guides.
+    2.  `config` refers to the location that you mapped to `config` when following the Kometa Installation Guides.
 
 ## Playlist Attributes
 
-Plex Meta Manager can automatically build and update playlists defined within the `playlists` attribute.
+Kometa can automatically build and update playlists defined within the `playlists` attribute.
 
 These are the attributes which can be utilized within the Playlist File:
 
@@ -94,7 +76,7 @@ These are the attributes which can be utilized within the Playlist File:
 
 * `playlists` is required in order to run the Playlist File.
 * You can find example Playlist Files in the 
-[Plex Meta Manager Configs Repository](https://github.com/meisnate12/Plex-Meta-Manager-Configs/tree/master/PMM)
+[Kometa Community Configs Repository](https://github.com/Kometa-Team/Community-Configs)
 * Plex does not support the "Continue Watching" feature for playlists, you can
 [vote for the feature here](https://forums.plex.tv/t/playlists-remember-position-for-subsequent-resume/84866/39)
 
@@ -123,12 +105,12 @@ There are multiple types of attributes that can be utilized within a playlist:
 
 ### Special Playlist Attributes
 
-| Attribute         | Description                                                                                                                                                                                                                                                                                                                              |                  Required                  |
-|:------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------:|
-| `libraries`       | Determine which libraries the playlist will be built from.<br>**Options:** Comma-separated string or list of library mapping names defined in the `libraries` attribute in the base of your [Configuration File](../overview.md.                                                                                                         | :fontawesome-solid-circle-check:{ .green } |
-| `sync_to_users`   | Determine which Users have the playlist synced.<br>This will override the global [`playlist_sync_to_users` Setting](../config/settings.md).<br>**Options:** Comma-separated string or list of users, `all` for every user who has server access, or leave blank for just the server owner.                                               |  :fontawesome-solid-circle-xmark:{ .red }  |
-| `exclude_users`   | Determine which Users will be excluded from having the playlist synced.<br>This will override the global [`playlist_excude_users` Setting](../config/settings.md).<br>**Options:** Comma-separated string or list of users, `all` for every user who has server access, or leave blank for just the server owner.                        |  :fontawesome-solid-circle-xmark:{ .red }  |
-| `delete_playlist` | Will delete this playlist for the users defined by sync_to_users.<br>**Options:** `true` or `false`                                                                                                                                                                                                                                      |  :fontawesome-solid-circle-xmark:{ .red }  |
+| Attribute         | Description                                                                                                                                                                                                                                                                                                       |                  Required                  |
+|:------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------:|
+| `libraries`       | Determine which libraries the playlist will be built from.<br>**Options:** Comma-separated string or list of library mapping names defined in the `libraries` attribute in the base of your [Configuration File](../config/overview.md).                                                                          | :fontawesome-solid-circle-check:{ .green } |
+| `sync_to_users`   | Determine which Users have the playlist synced.<br>This will override the global [`playlist_sync_to_users` Setting](../config/settings.md).<br>**Options:** Comma-separated string or list of users, `all` for every user who has server access, or leave blank for just the server owner.                        |  :fontawesome-solid-circle-xmark:{ .red }  |
+| `exclude_users`   | Determine which Users will be excluded from having the playlist synced.<br>This will override the global [`playlist_excude_users` Setting](../config/settings.md).<br>**Options:** Comma-separated string or list of users, `all` for every user who has server access, or leave blank for just the server owner. |  :fontawesome-solid-circle-xmark:{ .red }  |
+| `delete_playlist` | Will delete this playlist for the users defined by sync_to_users.<br>**Options:** `true` or `false`                                                                                                                                                                                                               |  :fontawesome-solid-circle-xmark:{ .red }  |
 
 * Any defined playlist will be always be visible by The Plex Media Server owner, so it doesn't need to be defined within `sync_to_users`.
 
